@@ -1,0 +1,857 @@
+/*
+ * @Author      : ZhouQiJun
+ * @Date        : 2025-09-08 01:37:38
+ * @LastEditors : ZhouQiJun
+ * @LastEditTime: 2025-09-21 00:04:14
+ * @Description : OlDraw 类
+ */
+import type { Map, MapBrowserEvent, View } from 'ol'
+import Collection, { CollectionEvent } from 'ol/Collection'
+import Feature from 'ol/Feature'
+import BaseObject from 'ol/Object'
+import { unByKey } from 'ol/Observable'
+import type { Coordinate } from 'ol/coordinate'
+import type { EventsKey } from 'ol/events'
+import { type Extent, createEmpty, extend } from 'ol/extent'
+import { GeoJSON, WKT } from 'ol/format'
+import { Circle, type Geometry, type SimpleGeometry } from 'ol/geom'
+import { circular } from 'ol/geom/Polygon'
+import { Draw, Modify, Translate } from 'ol/interaction'
+import type { DrawEvent } from 'ol/interaction/Draw'
+import type { TranslateEvent } from 'ol/interaction/Translate'
+import VectorLayer from 'ol/layer/Vector'
+import { fromLonLat, toLonLat, transform } from 'ol/proj'
+import VectorSource from 'ol/source/Vector'
+import { getDistance } from 'ol/sphere'
+import { Fill, Stroke, Style } from 'ol/style'
+import CircleStyle from 'ol/style/Circle'
+import type { StyleLike } from 'ol/style/Style'
+import type { FlatStyle } from 'ol/style/flat'
+
+import type { GeoJSON as GeoJSONT } from 'geojson'
+import { debounce } from 'petite-utils'
+import { shallowRef } from 'vue'
+
+import {
+  GeoEditorDeselectEvent,
+  GeoEditorDrawEvent,
+  GeoEditorEventType,
+  GeoEditorModifyEvent,
+  GeoEditorMoveEvent,
+  GeoEditorSelectEvent,
+} from './GeomEditorEvents'
+import {
+  type DeselectOptions,
+  type FeatureOptions,
+  type FitOptions,
+  type GeoType,
+  type GeomEditorI,
+  type GeometryData,
+  type GeometryGeoJSON,
+  type GeometryWKT,
+  type Id,
+  type ProjCode,
+  type SelectModeOptions,
+  type SelectOptions,
+} from './GeomEditorI'
+import { genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } from './utils'
+
+//import type { GeometryFunction } from 'ol/style/Style'
+const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
+
+// type ElementOf<T extends readonly unknown[]> = T[number]
+
+type Action = (typeof DEFAULT_ACTIONS)[number]
+
+type OlDrawOptions = {
+  /**
+   * 是否显示工具条
+   *
+   * 默认显示
+   */
+  showToolBar?: boolean
+  /**
+   * 想要绘制几何图形
+   *
+   * 默认 ['Point', 'LineString', 'Polygon', 'Circle']
+   */
+  drawTypes?: GeoType[]
+  /**
+   * 是否支持自由绘制。默认支持
+   *
+   * 只有 drawTypes 【线 - LineString】【面 - Polygon】才有意义
+   */
+  supportFreehand?: boolean
+  /**
+   * 其他操作
+   *
+   * 默认 ['remove', 'modify', 'translate', 'complete']
+   */
+  actions?: Action[]
+  /**
+   * 删除所有时是否需要二次确认
+   */
+  // confirmOnRemoveAll?: Confirm | boolean
+  /**
+   * 要素的默认样式
+   */
+  style?: Style | StyleLike | FlatStyle
+}
+
+const highlightStyle = new Style({
+  fill: new Fill({
+    color: '#EEE',
+  }),
+  stroke: new Stroke({
+    color: '#3399CC',
+    width: 2,
+  }),
+  image: new CircleStyle({
+    radius: 7,
+    fill: new Fill({
+      color: '#3399CC',
+    }),
+  }),
+})
+
+const defaultFit: FitOptions = {
+  duration: 500,
+  maxZoom: 14,
+  padding: 100,
+}
+const canFreehandType: GeoType[] = ['LineString', 'Polygon'] as const
+
+// 绘制图层的 zIndex 设置为一个很大的值（超过9亿），确保在最上层显示
+const zIndex = +Math.floor(Number.MAX_SAFE_INTEGER / 1000_0000)
+
+class GeomEditor extends BaseObject implements GeomEditorI {
+  #source: VectorSource<Geometry> = new VectorSource()
+  #layer: VectorLayer<VectorSource<Geometry>> = new VectorLayer({
+    // TODO 图层层级支持从构造函数传入
+    zIndex,
+    source: this.#source,
+    className: `ol-layer ol-draw-layer z-index:${zIndex}`,
+    // TODO 图层样式
+  })
+  #selected = new Collection<Feature<Geometry>>([])
+  readonly #map: Map | null = null
+  readonly #view: View | null = null
+  readonly #dataProj: ProjCode = 'EPSG:4326'
+  readonly #mapProj: ProjCode = 'EPSG:3857'
+  #modify = shallowRef<Modify>()
+  #translate = shallowRef<Translate>()
+  #draw = shallowRef<Draw>()
+  #drawingType: GeoType = 'None'
+  #selectOn: EventsKey | null = null
+  #drawEndOn: EventsKey | null = null
+  #drawStartOn: EventsKey | null = null
+
+  #boxSelectable = false
+  #multiSelectable = true
+  #singleSelectable = false
+  #canFreehand = false
+  protected sketchStyle: Style | StyleLike | FlatStyle | null = null
+  constructor(map: Map, options: OlDrawOptions = {}) {
+    super()
+    this.#map = map
+    this.#view = map.getView()
+    this.#mapProj = this.#view.getProjection().getCode() as ProjCode
+    this.#addLayer()
+    this.#initOptions(options)
+    this.#onSourceChange()
+    this.#onSelectedChange()
+    // 点击选中或者取消选中要素
+    this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
+    // 设置鼠标样式
+    const debounceOnPointerMove = debounce(this.#onPointerMove.bind(this), 50)
+    map.on('pointermove', debounceOnPointerMove)
+  }
+
+  get source() {
+    return this.#source
+  }
+
+  get layer() {
+    return this.#layer
+  }
+
+  // 增加要素
+  /*
+   * @description 从 WKT 字符串添加要素
+   */
+  addFeatureFromWKT(wkt: string, id?: Id, projection: ProjCode | FeatureOptions = 'EPSG:4326'): boolean {
+    if (!wkt || !isWKT(wkt)) return false
+    if (id) {
+      // 已经存在要素
+      const hasFeature = this.#source.getFeatureById(id)
+      if (hasFeature) return false
+    }
+    let feature
+    if (typeof projection === 'string') {
+      feature = new WKT().readFeature(wkt, {
+        dataProjection: projection,
+        featureProjection: this.#mapProj,
+      })
+    } else {
+      const { style, ...projectionOptions } = projection
+      feature = new WKT().readFeature(wkt, projectionOptions)
+      style && feature.setStyle(style)
+    }
+    const type = getWKTType(wkt)
+    feature.setId(id ?? genId(type ?? ''))
+    this.#source.addFeature(feature)
+    return true
+  }
+
+  addFeatureFromJSON(JSON: string | GeoJSONT, projection: ProjCode | FeatureOptions = 'EPSG:4326'): boolean {
+    if (!JSON) return false
+    let JSON_ = ''
+    if (typeof JSON === 'object') {
+      if (!isGeoJSONObj(JSON)) {
+        return false
+      }
+      try {
+        JSON_ = window.JSON.stringify(JSON)
+      } catch (error) {
+        return false
+      }
+    } else {
+      JSON_ = JSON
+    }
+    if (isGeoJSON(JSON_)) {
+      let feature
+      if (typeof projection === 'string') {
+        feature = new GeoJSON().readFeature(JSON_, {
+          dataProjection: projection,
+          featureProjection: this.#mapProj,
+        })
+      } else {
+        const { style, ...projectionOptions } = projection
+        feature = new GeoJSON().readFeature(JSON_, projectionOptions)
+        style && feature.setStyle(style)
+      }
+
+      const type = feature.getGeometry()?.getType()
+      const props = feature.getProperties()
+      const id = feature.getId()
+      if (!id) {
+        feature.setId(genId(type))
+      } else {
+        const hasFeature = this.#source.getFeatureById(id)
+        if (hasFeature) return false
+      }
+      const isCircle = props.geometryType === 'circle'
+      // 使用多边形拟合圆
+      if (isCircle && type === 'Polygon') {
+        const center = props.center
+        const radius = props.radius
+        if (Array.isArray(center) && radius != null) {
+          const center3857 = fromLonLat(center)
+          const is3857 = this.#mapProj.endsWith('3857')
+          const circle = new Feature(new Circle(is3857 ? center3857 : center, radius))
+          circle.setId(id ?? genId('circle'))
+          this.#source.addFeature(circle)
+        }
+      } else {
+        this.#source.addFeature(feature)
+      }
+      return true
+    }
+    return false
+  }
+
+  enableDraw(type: GeoType, style?: Style | StyleLike | FlatStyle): void {
+    if (!this.#map) return
+    this.#drawingType = type
+    // 只能同时启用一种绘制类型，先禁用之前的绘制
+    this.disableDraw()
+    if (type === 'None') return
+    this.disableSelect()
+    this.disableModify()
+    this.disableTranslate()
+    if (style) {
+      this.sketchStyle = style
+    }
+    this.#draw.value = new Draw({
+      source: this.#source,
+      type,
+      freehand: this.#canFreehand && canFreehandType.includes(type),
+      style: this.sketchStyle !== null ? this.sketchStyle : undefined,
+    })
+    this.#map.addInteraction(this.#draw.value)
+    this.#drawStartOn = this.#draw.value.on('drawstart', (event: DrawEvent) => {
+      this.dispatchEvent(event)
+      const feature = event.feature
+      const geometry = feature.getGeometry() as SimpleGeometry
+      const flatCoords = geometry.getFlatCoordinates()
+      const [lon, lat] = flatCoords
+      const start = toLonLat([lon, lat])
+      const start3857 = fromLonLat(start)
+      const allFeatures = this.#source.getFeatures()
+      const allData = this.#convertFeaturesToData(allFeatures)
+      const startAt = {
+        coord: start,
+        coord3857: start3857,
+      }
+      this.dispatchEvent(
+        new GeoEditorDrawEvent(GeoEditorEventType.DRAW_BEGIN, null, feature, startAt, allData, allFeatures),
+      )
+    })
+    this.#drawEndOn = this.#draw.value.on('drawend', (event: DrawEvent) => {
+      this.dispatchEvent(event)
+      const feature = event.feature
+      const geometry = feature.getGeometry() as SimpleGeometry
+      const flatCoords = geometry.getFlatCoordinates()
+      const [lon, lat] = flatCoords
+      const start = toLonLat([lon, lat])
+      const start3857 = fromLonLat(start)
+      const startAt = {
+        coord: start,
+        coord3857: start3857,
+      }
+      const end = toLonLat([flatCoords.at(-2)!, flatCoords.at(-1)!])
+      const end3857 = fromLonLat(end)
+      const endAt = {
+        coord: end,
+        coord3857: end3857,
+      }
+      feature.setId(genId(this.#drawingType))
+      const allFeatures = this.#source.getFeatures()
+      allFeatures.push(feature)
+      const allData = this.#convertFeaturesToData(allFeatures)
+      if (this.#drawingType === 'Circle') {
+        const circleData = this.#convertCircleToData(feature as Feature<Circle>)
+        const event = new GeoEditorDrawEvent(
+          GeoEditorEventType.DRAW_COMPLETE,
+          circleData,
+          feature,
+          startAt,
+          allData,
+          allFeatures,
+          endAt,
+        )
+        this.dispatchEvent(event)
+      } else {
+        const [data] = this.#convertFeaturesToData([feature])
+        const event = new GeoEditorDrawEvent(
+          GeoEditorEventType.DRAW_COMPLETE,
+          data,
+          feature,
+          startAt,
+          allData,
+          allFeatures,
+          endAt,
+        )
+        this.dispatchEvent(event)
+      }
+    })
+  }
+
+  disableDraw() {
+    if (!this.#map || !this.#draw.value) return
+    this.#map.removeInteraction(this.#draw.value)
+    this.#draw.value = undefined
+    unByKey(this.#drawEndOn!)
+    unByKey(this.#drawStartOn!)
+  }
+
+  enableFreehand() {
+    this.#canFreehand = true
+    if (!canFreehandType.includes(this.#drawingType)) return
+    this.enableDraw(this.#drawingType)
+  }
+
+  disableFreehand() {
+    this.#canFreehand = false
+    if (!canFreehandType.includes(this.#drawingType)) return
+    if (this.sketchStyle) {
+      this.enableDraw(this.#drawingType, this.sketchStyle)
+    } else {
+      this.enableDraw(this.#drawingType)
+    }
+  }
+
+  // 选择要素
+  select(id: Id | Id[], options?: SelectOptions): Feature[] {
+    if (!this.#selectOn) return []
+    const style = options?.selectedStyle
+    const each = options?.eachFeature
+    let _fit = true
+    if (options?.fit === false) {
+      _fit = false
+    }
+    const arr = []
+    if (Array.isArray(id)) {
+      arr.push(...id)
+    } else {
+      arr.push(id)
+    }
+
+    const mergedExtent: Extent = createEmpty()
+    const selected: Feature[] = []
+    let stopEach = false
+
+    arr.forEach((id, index) => {
+      const feat = this.#source.getFeatureById(id)
+      if (feat) {
+        // @ts-ignore
+        selected.push(feat)
+        // @ts-ignore
+        this.#selected.push(feat)
+        if (_fit) {
+          // @ts-ignore
+          const ex = feat.getGeometry()?.getExtent() as Extent
+          extend(mergedExtent, ex)
+        }
+        if (style) {
+          // @ts-ignore
+          feat.setStyle(style)
+        }
+      }
+      if (!stopEach && each && feat) {
+        // @ts-ignore
+        stopEach = !!each(feat, index)
+      }
+    })
+    if (_fit && selected.length) {
+      const _options = defaultFit
+      if (options?.fit !== false) {
+        Object.assign(_options, options?.fit === true ? {} : options?.fit)
+        // @ts-ignore
+        _options.padding = normalizePadding(_options.padding) as number[]
+      }
+      // @ts-ignore
+      this.#view!.fit(mergedExtent, _options)
+    }
+    return selected
+  }
+
+  deselect(id: Id | Id[], options?: DeselectOptions): void {
+    // if (!this.#selectOn) return
+    const style = options?.deselectStyle
+    const each = options?.eachFeature
+    const arr = []
+    if (Array.isArray(id)) {
+      arr.push(...id)
+    } else {
+      arr.push(id)
+    }
+    // const data: GeometryData[] = []
+    const deselected: Feature[] = []
+    let stopEach = false
+
+    arr.forEach((id, index) => {
+      const feat = this.#source.getFeatureById(id)
+      if (feat) {
+        //@ts-ignore
+        deselected.push(feat)
+        //@ts-ignore
+        this.#selected.remove(feat)
+        //@ts-ignore
+        feat.setStyle(style)
+      }
+      if (!stopEach && each && feat) {
+        //@ts-ignore
+        stopEach = !!each(feat, index)
+      }
+    })
+  }
+
+  enableSelect(
+    options: SelectModeOptions = {
+      multi: true,
+      box: false,
+      single: false,
+    },
+  ): boolean {
+    this.disableDraw()
+    this.#singleSelectable = options?.single === true // 默认关闭单选
+    this.#boxSelectable = options?.box === true // 默认关闭框选
+    this.#multiSelectable = options?.multi !== false // 默认开启多选
+    if (this.#singleSelectable) {
+      this.#multiSelectable = false
+      this.#boxSelectable = false
+    }
+    if (this.#multiSelectable || this.#boxSelectable) {
+      // 有多选，禁用编辑
+      this.disableModify()
+    }
+    if (this.#selectOn) return true
+    this.#selectOn = this.#map!.on('singleclick', this.#whenSingleClick.bind(this))
+    return true
+  }
+
+  disableSelect(): boolean {
+    unByKey(this.#selectOn!)
+    // TODO 恢复未选中的样式
+    this.#selectOn = null
+    return true
+  }
+
+  // 平移要素
+  enableTranslate(id?: Id): boolean {
+    // 先启用多选
+    this.enableSelect({
+      multi: true,
+    })
+    // 禁用修改和绘制
+    this.disableModify()
+    this.disableDraw()
+    if (this.#translate.value) {
+      this.#translate.value.setActive(true)
+      return true
+    }
+    this.#translate.value = new Translate({
+      features: this.#selected,
+    })
+    this.#map?.addInteraction(this.#translate.value)
+    this.#translate.value.on('translatestart', event => {
+      this.dispatchEvent(event)
+      this.#emitMoveStart(event)
+    })
+    this.#translate.value.on('translateend', event => {
+      this.dispatchEvent(event)
+      this.#emitMoveEnd(event)
+    })
+    return true
+  }
+
+  disableTranslate(id?: Id): boolean {
+    if (!this.#translate.value) return true
+    this.#translate.value.setActive(false)
+    return true
+  }
+
+  /**
+   * 启用修改
+   * @param style 修改时候的样式
+   * @example
+   * ```ts
+   * enableModify({
+   *
+   * })
+   * ```
+   */
+  enableModify(style?: Style | StyleLike | FlatStyle) {
+    // 编辑器一般都是先选中要素，再修改，单选
+    this.enableSelect({
+      single: true,
+    })
+    this.disableTranslate()
+    this.disableDraw()
+
+    if (this.#modify.value) {
+      this.#modify.value.setActive(true)
+    }
+    this.#modify.value = new Modify({
+      features: this.#selected,
+    })
+    this.#map?.addInteraction(this.#modify.value)
+    this.#modify.value.on('modifystart', event => {
+      this.dispatchEvent(event)
+      const dataList = this.#convertFeaturesToData(event.features)
+      const _event = new GeoEditorModifyEvent(GeoEditorEventType.MODIFY_BEGIN, dataList, event.features)
+      this.dispatchEvent(_event)
+    })
+    this.#modify.value.on('modifyend', event => {
+      this.dispatchEvent(event)
+      const dataList = this.#convertFeaturesToData(event.features)
+      const _event = new GeoEditorModifyEvent(GeoEditorEventType.MODIFY_COMPLETE, dataList, event.features)
+      this.dispatchEvent(_event)
+    })
+  }
+
+  disableModify(id?: Id | Id[], style?: StyleLike): boolean {
+    if (!this.#modify.value) return true
+    this.#modify.value.setActive(false)
+    return true
+  }
+
+  //  删除要素
+  removeFeatures(id?: Id | Id[]) {
+    if (id === null || id === undefined) {
+      this.#selected.forEach(f => {
+        this.#source.removeFeature(f)
+      })
+      this.#selected.clear()
+      return
+    }
+    const ids = Array.isArray(id) ? id : [id]
+    ids.forEach(id => {
+      const feature = this.#source.getFeatureById(id)
+      if (feature) {
+        this.#source.removeFeature(feature)
+        this.#selected.remove(feature)
+      }
+    })
+    // TODO 抛出事件
+  }
+
+  removeAllFeatures() {
+    this.#source.clear()
+    this.#selected.clear()
+    // TODO 抛出事件
+    return Promise.resolve(true)
+  }
+
+  // 编辑完毕
+  completeEdit(): void {
+    // TODO
+  }
+
+  #initOptions(options: OlDrawOptions) {}
+
+  #whenSingleClick(e: MapBrowserEvent<MouseEvent>) {
+    const features = this.#source.getFeatures()
+    if (features.length === 0) return
+    const hasFeature = this.#map!.hasFeatureAtPixel(e.pixel)
+    if (!hasFeature) {
+      this.#selected.forEach(feat => {
+        feat.setStyle(undefined)
+      })
+      this.#selected.clear()
+      return
+    }
+    const hitFeature = (f: Feature<Geometry>) => {
+      if (!f) return
+      const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
+      if (this.#singleSelectable) {
+        // 点击的要素没有被选中，就选中
+        this.#selected.forEach(feat => {
+          feat.setStyle(undefined)
+        })
+        this.#selected.clear()
+        if (!feat) {
+          this.#selected.push(f)
+          f.setStyle(highlightStyle)
+        }
+      } else {
+        if (feat) {
+          this.#selected.remove(feat)
+          f.setStyle(undefined)
+        } else {
+          this.#selected.push(f)
+          f.setStyle(highlightStyle)
+        }
+      }
+    }
+    this.#map!.forEachFeatureAtPixel(
+      e.pixel,
+      f => {
+        hitFeature(f as Feature)
+      },
+      {
+        layerFilter: layer => {
+          return layer === this.#layer
+        },
+      },
+    )
+  }
+
+  #onPointerMove(evt: MapBrowserEvent<MouseEvent>) {
+    if (evt.dragging || !this.#selectOn) {
+      return
+    }
+    const map = evt.map!
+    // 获取当前鼠标位置的像素坐标
+    const pixel = map.getEventPixel(evt.originalEvent)
+    // 检查当前位置是否有要素
+    const hit = map.hasFeatureAtPixel(pixel)
+    map.getTargetElement().style.cursor = hit ? 'pointer' : ''
+  }
+
+  #onSourceChange() {
+    // 修改现有的要素
+    this.#source.on('changefeature', () => {
+      //console.log('changefeature')
+      // this.#enableBtn('complete', true, TITLE_MAP['complete'])
+    })
+
+    // 添加新要素
+    this.#source.on('addfeature', () => {
+      DEFAULT_ACTIONS.forEach(action => {
+        //if (action !== 'complete') {
+        //this.#enableBtn(action, true, TITLE_MAP[action])
+        //}
+      })
+    })
+    // 移除要素
+    this.#source.on('removefeature', () => {
+      const hasFeature = this.#source.getFeatures().length > 0
+      console.log({ hasFeature }, 'zqj removeFeature')
+      if (!hasFeature) {
+        //this.#enableBtn('modify', false, '')
+        //this.#enableBtn('remove', false, '')
+        //this.#enableBtn('translate', false, '')
+      }
+    })
+  }
+
+  #onSelectedChange() {
+    const add = (e: CollectionEvent<Feature<Geometry>>) => {
+      const feature = e.element
+      const feats = this.#selected.getArray()
+      const [selectData] = this.#convertFeaturesToData([feature])
+      const dataArray = this.#convertFeaturesToData(feats)
+      this.dispatchEvent(
+        new GeoEditorSelectEvent(GeoEditorEventType.SELECT, dataArray, selectData, feats, []),
+      )
+    }
+    this.#selected.on('add', add)
+
+    const remove = (e: CollectionEvent<Feature<Geometry>>) => {
+      const feature = e.element
+      const [deselectData] = this.#convertFeaturesToData([feature])
+      const selectedFeatures = this.#selected.getArray()
+      const deselectArray = this.#convertFeaturesToData([feature])
+      const deselectFeatures = [feature]
+
+      this.dispatchEvent(
+        new GeoEditorDeselectEvent(
+          GeoEditorEventType.DESELECT,
+          deselectArray,
+          deselectData,
+          selectedFeatures,
+          deselectFeatures,
+        ),
+      )
+    }
+
+    this.#selected.on('remove', remove)
+  }
+
+  #addLayer() {
+    this.#map?.addLayer(this.#layer)
+  }
+
+  #toWKT(feature: Feature): GeometryWKT {
+    const { feature: feat, id } = this.#setFeatureId(feature)
+    const wkt = new WKT().writeFeature(feat, {
+      dataProjection: this.#dataProj,
+      featureProjection: this.#mapProj!,
+    })
+    return { wkt, id }
+  }
+  #setFeatureId(feature: Feature) {
+    let id
+    if (!feature.getId()) {
+      id = genId()
+      feature.setId(id)
+    } else {
+      id = feature.getId()
+    }
+    return {
+      id,
+      feature,
+    }
+  }
+  #toGeojson(feature: Feature): GeometryGeoJSON {
+    const { feature: feat, id } = this.#setFeatureId(feature)
+    const geojsonObj = new GeoJSON().writeFeatureObject(feat, {
+      dataProjection: this.#dataProj,
+      featureProjection: this.#mapProj!,
+    })
+    const geojson = new GeoJSON().writeFeature(feat, {
+      dataProjection: this.#dataProj,
+      featureProjection: this.#mapProj!,
+    })
+    return {
+      id,
+      geojsonObj,
+      geojson,
+    }
+  }
+  #convertFeaturesToData(feats: Collection<Feature> | Array<Feature>): GeometryData[] {
+    let list = []
+    if (Array.isArray(feats)) {
+      list = feats
+    } else {
+      list = feats.getArray()
+    }
+    return list.map(feat => {
+      const type = feat.getGeometry()?.getType()
+      if (type === 'Circle') {
+        return this.#convertCircleToData(feat as Feature<Circle>)
+      }
+      const { wkt, id: id_ } = this.#toWKT(feat!)
+      const { geojson, geojsonObj } = this.#toGeojson(feat!)
+      return {
+        wkt,
+        id: id_,
+        geojson,
+        geojsonObj,
+      }
+    })
+  }
+  #convertCircleToData(feature: Feature<Circle>): GeometryData {
+    const circle = feature.getGeometry() as Circle
+    const flatCoords = circle.getFlatCoordinates()
+    const r = circle.getRadius()
+    const center = toLonLat(circle.getCenter())
+    const c1 = transform([flatCoords[2], flatCoords[3]], this.#mapProj, 'EPSG:4326')
+    const radius = getDistance(center, c1)
+    const center3857 = fromLonLat(center)
+    const code = this.#mapProj.replace('EPSG:', '')
+    const properties = {
+      geometry: 'circle',
+      center,
+      radius,
+      center3857,
+      ['radius' + code]: r,
+    }
+
+    const polygon = circular(center, r, 128)
+    const id = feature.getId()
+    const polygonFeature = new Feature(polygon)
+    polygonFeature.setId(id)
+    const wkt = new WKT().writeFeature(polygonFeature, {
+      dataProjection: this.#dataProj,
+      featureProjection: this.#dataProj,
+    })
+    const geojsonObj = new GeoJSON().writeFeatureObject(polygonFeature, {
+      dataProjection: this.#dataProj,
+      featureProjection: this.#dataProj,
+    })
+
+    geojsonObj.properties = properties
+    const geoJson = JSON.stringify(geojsonObj)
+
+    return {
+      id,
+      wkt,
+      geojson: geoJson,
+      geojsonObj,
+    }
+  }
+
+  #emitMoveStart(event: TranslateEvent) {
+    const { features, startCoordinate } = event
+    this.dispatchEvent(this.#createMoveEvent(features, startCoordinate))
+  }
+  #emitMoveEnd(event: TranslateEvent) {
+    const { features, startCoordinate, coordinate } = event
+    this.dispatchEvent(this.#createMoveEvent(features, startCoordinate, coordinate))
+  }
+  #createMoveEvent(features: Collection<Feature<Geometry>>, startAt: Coordinate, endAt?: Coordinate) {
+    const dataList = this.#convertFeaturesToData(features)
+    const start = transform(startAt, this.#mapProj, 'EPSG:4326')
+    const start3857 = transform(startAt, this.#mapProj, 'EPSG:3857')
+    const _startAt = {
+      coord: start,
+      coord3857: start3857,
+    }
+
+    if (endAt) {
+      const end = transform(endAt, this.#mapProj, 'EPSG:4326')
+      const end3857 = transform(endAt, this.#mapProj, 'EPSG:3857')
+      const _endAt = {
+        coord: end,
+        coord3857: end3857,
+      }
+      return new GeoEditorMoveEvent(GeoEditorEventType.MOVE_END, dataList, features, _startAt, _endAt)
+    }
+    return new GeoEditorMoveEvent(GeoEditorEventType.MOVE_START, dataList, features, _startAt)
+  }
+}
+
+export { GeomEditor, type OlDrawOptions }

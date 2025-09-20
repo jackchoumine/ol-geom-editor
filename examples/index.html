@@ -1,0 +1,77 @@
+<!--
+ * @Author      : ZhouQiJun
+ * @Date        : 2025-08-06 23:06:40
+ * @LastEditors : ZhouQiJun
+ * @LastEditTime: 2025-09-08 02:33:55
+ * @Description : test html
+-->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ol-draw-examples</title>
+  </head>
+  <body>
+    <div id="ol-draw-test"></div>
+    <div class="do">
+      <div class="operation">
+        <h3>添加要素</h3>
+        <h4>从 WKT 或者 JSON 添加</h4>
+        <div>
+          <button id="add-wkt">添加 WKT</button>
+          <button id="add-JSON">添加 JSON</button>
+          <button id="add-JSONObj">添加 JSONObj</button>
+        </div>
+
+        <h4>手动绘制添加</h4>
+        <div class="draw">
+          <select name="type" id="select-type">
+            <option value="None">None</option>
+            <option value="Point">Point</option>
+            <!--  <option value="MultiPoint">MultiPoint</option>-->
+            <option value="LineString">LineString</option>
+            <!-- <option value="MultiLineString">MultiLineString</option>-->
+            <option value="Polygon">Polygon</option>
+            <!--  <option value="MultiPolygon">MultiPolygon</option>-->
+            <option value="Circle">Circle</option>
+            <!--<option value="LinearRing">LinearRing</option>-->
+          </select>
+          <label for="freehand" id="freehand-box" title="仅线和面支持自由绘制">
+            <span>自由绘制</span>
+            <input type="checkbox" name="freehand" id="freehand" disabled />
+          </label>
+        </div>
+      </div>
+      <div class="operation">
+        <h3>查询要素</h3>
+        <div>
+          <button id="select-features">选中要素</button>
+          <button id="deselect-features">取消选中</button>
+          <button id="disable-select">禁用选择</button>
+          <button id="enable-select">启用多选</button>
+          <button id="enable-select-single">启用单选</button>
+        </div>
+      </div>
+      <div class="operation">
+        <h3>编辑要素</h3>
+        <div>
+          <button id="enable-modify">启用编辑</button>
+          <button id="disable-modify">禁用编辑</button>
+          <button id="translate-features">启用平移</button>
+          <button id="disable-translate">禁用平移</button>
+        </div>
+      </div>
+      <div class="operation">
+        <h3>删除要素</h3>
+        <div>
+          <button id="remove-feature">删除要素</button>
+          <button id="remove-selected-features">删除选中的要素</button>
+          <button id="remove-all-features">删除所有</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,73 @@
+{
+  "name": "ol-geom-editor",
+  "version": "0.5.1",
+  "description": "An elegant OpenLayers extension for editing geometric shapes.",
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "release": "bumpp && npm publish",
+    "postinstall": "npx simple-git-hooks",
+    "format": "prettier --write ./examples"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,scss,html,md}": [
+      "prettier --write"
+    ]
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^22.15.17",
+    "bumpp": "^10.1.0",
+    "lint-staged": "^16.1.6",
+    "ol": "^7.5.2",
+    "prettier": "^3.6.2",
+    "simple-git-hooks": "^2.13.1",
+    "tsdown": "^0.11.9",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  },
+  "peerDependencies": {
+    "ol": "^7.5.2"
+  },
+  "author": "ZhouQijun <zhouQijun4job@163.com>",
+  "dependencies": {
+    "petite-utils": "^0.0.25",
+    "vue": "^3.5.21"
+  },
+  "keywords": [
+    "ol",
+    "openLayers",
+    "ol-extension-editor",
+    "ol-geom-editor",
+    "ol-ex",
+    "ol-draw-geometry",
+    "ol-edit-geometry",
+    "ol-shapes",
+    "ol-geom-editor",
+    "ol-extension",
+    "ol-ex-editor",
+    "ol-ex-edit-geometry",
+    "ol-draw-shapes"
+  ]
+}
