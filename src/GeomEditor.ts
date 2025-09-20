@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 00:04:14
+ * @LastEditTime: 2025-09-21 00:47:34
  * @Description : OlDraw 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -33,12 +33,12 @@ import { debounce } from 'petite-utils'
 import { shallowRef } from 'vue'
 
 import {
-  GeoEditorDeselectEvent,
-  GeoEditorDrawEvent,
-  GeoEditorEventType,
-  GeoEditorModifyEvent,
-  GeoEditorMoveEvent,
-  GeoEditorSelectEvent,
+  GeomEditorDeselectEvent,
+  GeomEditorDrawEvent,
+  GeomEditorEventType,
+  GeomEditorModifyEvent,
+  GeomEditorMoveEvent,
+  GeomEditorSelectEvent,
 } from './GeomEditorEvents'
 import {
   type DeselectOptions,
@@ -294,7 +294,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         coord3857: start3857,
       }
       this.dispatchEvent(
-        new GeoEditorDrawEvent(GeoEditorEventType.DRAW_BEGIN, null, feature, startAt, allData, allFeatures),
+        new GeomEditorDrawEvent(GeomEditorEventType.DRAW_BEGIN, null, feature, startAt, allData, allFeatures),
       )
     })
     this.#drawEndOn = this.#draw.value.on('drawend', (event: DrawEvent) => {
@@ -321,8 +321,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const allData = this.#convertFeaturesToData(allFeatures)
       if (this.#drawingType === 'Circle') {
         const circleData = this.#convertCircleToData(feature as Feature<Circle>)
-        const event = new GeoEditorDrawEvent(
-          GeoEditorEventType.DRAW_COMPLETE,
+        const event = new GeomEditorDrawEvent(
+          GeomEditorEventType.DRAW_COMPLETE,
           circleData,
           feature,
           startAt,
@@ -333,8 +333,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         this.dispatchEvent(event)
       } else {
         const [data] = this.#convertFeaturesToData([feature])
-        const event = new GeoEditorDrawEvent(
-          GeoEditorEventType.DRAW_COMPLETE,
+        const event = new GeomEditorDrawEvent(
+          GeomEditorEventType.DRAW_COMPLETE,
           data,
           feature,
           startAt,
@@ -550,13 +550,13 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#modify.value.on('modifystart', event => {
       this.dispatchEvent(event)
       const dataList = this.#convertFeaturesToData(event.features)
-      const _event = new GeoEditorModifyEvent(GeoEditorEventType.MODIFY_BEGIN, dataList, event.features)
+      const _event = new GeomEditorModifyEvent(GeomEditorEventType.MODIFY_BEGIN, dataList, event.features)
       this.dispatchEvent(_event)
     })
     this.#modify.value.on('modifyend', event => {
       this.dispatchEvent(event)
       const dataList = this.#convertFeaturesToData(event.features)
-      const _event = new GeoEditorModifyEvent(GeoEditorEventType.MODIFY_COMPLETE, dataList, event.features)
+      const _event = new GeomEditorModifyEvent(GeomEditorEventType.MODIFY_COMPLETE, dataList, event.features)
       this.dispatchEvent(_event)
     })
   }
@@ -694,7 +694,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const [selectData] = this.#convertFeaturesToData([feature])
       const dataArray = this.#convertFeaturesToData(feats)
       this.dispatchEvent(
-        new GeoEditorSelectEvent(GeoEditorEventType.SELECT, dataArray, selectData, feats, []),
+        new GeomEditorSelectEvent(GeomEditorEventType.SELECT, dataArray, selectData, feats, []),
       )
     }
     this.#selected.on('add', add)
@@ -707,8 +707,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const deselectFeatures = [feature]
 
       this.dispatchEvent(
-        new GeoEditorDeselectEvent(
-          GeoEditorEventType.DESELECT,
+        new GeomEditorDeselectEvent(
+          GeomEditorEventType.DESELECT,
           deselectArray,
           deselectData,
           selectedFeatures,
@@ -848,9 +848,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         coord: end,
         coord3857: end3857,
       }
-      return new GeoEditorMoveEvent(GeoEditorEventType.MOVE_END, dataList, features, _startAt, _endAt)
+      return new GeomEditorMoveEvent(GeomEditorEventType.MOVE_END, dataList, features, _startAt, _endAt)
     }
-    return new GeoEditorMoveEvent(GeoEditorEventType.MOVE_START, dataList, features, _startAt)
+    return new GeomEditorMoveEvent(GeomEditorEventType.MOVE_START, dataList, features, _startAt)
   }
 }
 

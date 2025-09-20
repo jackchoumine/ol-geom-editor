@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-13 21:51:45
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-14 02:57:27
+ * @LastEditTime: 2025-09-21 00:47:01
  * @Description : olGeometryEditor 自定义事件
  */
 import { Collection, type Feature } from 'ol'
@@ -19,15 +19,15 @@ type CoordInfo = {
   coord: Coordinate
   coord3857: Coordinate
 }
-enum GeoEditorEventType {
+enum GeomEditorEventType {
   /**
    * Triggered SELECT feature
-   * @event GeoEditorSelectEvent#select
+   * @event GeomEditorSelectEvent#select
    */
   SELECT = 'select',
   /**
    * Triggered DESELECT feature
-   * @event GeoEditorSelectEvent#deselect
+   * @event GeomEditorSelectEvent#deselect
    * @api
    */
   DESELECT = 'deselect',
@@ -40,12 +40,12 @@ enum GeoEditorEventType {
   MODIFY_COMPLETE = 'modifyComplete',
 }
 
-class GeoEditorSelectEvent extends SelectEvent {
+class GeomEditorSelectEvent extends SelectEvent {
   selectArray
   selectData
   selectFeature
   constructor(
-    type: GeoEditorEventType,
+    type: GeomEditorEventType,
     selectArray: GeometryData[],
     selectData: GeometryData,
     select: Feature<Geometry>[],
@@ -59,12 +59,12 @@ class GeoEditorSelectEvent extends SelectEvent {
   }
 }
 
-class GeoEditorDeselectEvent extends SelectEvent {
+class GeomEditorDeselectEvent extends SelectEvent {
   deselectArray
   deselectData
   deselectFeature
   constructor(
-    type: GeoEditorEventType,
+    type: GeomEditorEventType,
     deselectArray: GeometryData[],
     deselectData: GeometryData,
     select: Feature<Geometry>[],
@@ -78,7 +78,7 @@ class GeoEditorDeselectEvent extends SelectEvent {
   }
 }
 
-class GeoEditorDrawEvent extends BaseEvent {
+class GeomEditorDrawEvent extends BaseEvent {
   data
   feature
   startAt
@@ -86,7 +86,7 @@ class GeoEditorDrawEvent extends BaseEvent {
   allFeatures
   allData
   constructor(
-    type: GeoEditorEventType,
+    type: GeomEditorEventType,
     data: GeometryData | null,
     feature: Feature<Geometry>,
     startAt: CoordInfo,
@@ -104,12 +104,12 @@ class GeoEditorDrawEvent extends BaseEvent {
   }
 }
 
-class GeoEditorMoveEvent extends TranslateEvent {
+class GeomEditorMoveEvent extends TranslateEvent {
   dataArray
   startAt
   endAt
   constructor(
-    type: GeoEditorEventType,
+    type: GeomEditorEventType,
     dataArray: GeometryData[],
     features: Collection<Feature<Geometry>>,
     startAt: CoordInfo,
@@ -128,27 +128,27 @@ class GeoEditorMoveEvent extends TranslateEvent {
   }
 }
 
-class GeoEditorModifyEvent extends BaseEvent {
+class GeomEditorModifyEvent extends BaseEvent {
   dataArray
   features
-  constructor(type: GeoEditorEventType, dataArray: GeometryData[], features: Collection<Feature<Geometry>>) {
+  constructor(type: GeomEditorEventType, dataArray: GeometryData[], features: Collection<Feature<Geometry>>) {
     super(type)
     this.dataArray = dataArray
     this.features = features
   }
 }
-type GeoEditorEventMap = {
-  [GeoEditorEventType.SELECT]: (event: GeoEditorSelectEvent) => void
-  [GeoEditorEventType.DESELECT]: (event: GeoEditorSelectEvent) => void
-  [GeoEditorEventType.DRAW_COMPLETE]: (event: GeoEditorDrawEvent) => void
+type GeomEditorEventMap = {
+  [GeomEditorEventType.SELECT]: (event: GeomEditorSelectEvent) => void
+  [GeomEditorEventType.DESELECT]: (event: GeomEditorSelectEvent) => void
+  [GeomEditorEventType.DRAW_COMPLETE]: (event: GeomEditorDrawEvent) => void
 }
 
 export {
-  GeoEditorEventType,
-  GeoEditorSelectEvent,
-  GeoEditorDeselectEvent,
-  GeoEditorDrawEvent,
-  GeoEditorMoveEvent,
-  GeoEditorModifyEvent,
-  type GeoEditorEventMap,
+  GeomEditorEventType,
+  GeomEditorSelectEvent,
+  GeomEditorDeselectEvent,
+  GeomEditorDrawEvent,
+  GeomEditorMoveEvent,
+  GeomEditorModifyEvent,
+  type GeomEditorEventMap,
 }
