@@ -50,10 +50,14 @@
   "peerDependencies": {
     "ol": "^7.5.2"
   },
-  "author": "ZhouQijun <zhouQijun4job@163.com>",
   "dependencies": {
     "petite-utils": "^0.0.25",
     "vue": "^3.5.21"
+  },
+  "author": "ZhouQijun <zhouQijun4job@163.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jackchoumine/ol-geom-editor.git"
   },
   "keywords": [
     "ol",
