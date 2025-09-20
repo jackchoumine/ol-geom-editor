@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 00:55:45
+ * @LastEditTime: 2025-09-21 01:17:27
  * @Description : OlDraw 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -63,7 +63,7 @@ const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
 
 type Action = (typeof DEFAULT_ACTIONS)[number]
 
-type OlDrawOptions = {
+type GeomEditorOptions = {
   /**
    * 是否显示工具条
    *
@@ -151,7 +151,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #singleSelectable = false
   #canFreehand = false
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
-  constructor(map: Map, options: OlDrawOptions = {}) {
+  constructor(map: Map, options: GeomEditorOptions = {}) {
     super()
     this.#map = map
     this.#view = map.getView()
@@ -600,7 +600,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // TODO
   }
 
-  #initOptions(options: OlDrawOptions) {}
+  #initOptions(options: GeomEditorOptions) {}
 
   #whenSingleClick(e: MapBrowserEvent<MouseEvent>) {
     const features = this.#source.getFeatures()
@@ -855,4 +855,4 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 }
 
-export { GeomEditor, type OlDrawOptions }
+export { GeomEditor, type GeomEditorOptions }
