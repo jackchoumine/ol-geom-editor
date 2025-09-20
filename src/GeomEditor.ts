@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 00:47:34
+ * @LastEditTime: 2025-09-21 00:52:25
  * @Description : OlDraw 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -542,6 +542,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
     if (this.#modify.value) {
       this.#modify.value.setActive(true)
+      return
     }
     this.#modify.value = new Modify({
       features: this.#selected,
