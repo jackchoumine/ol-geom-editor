@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 00:52:25
+ * @LastEditTime: 2025-09-21 00:55:45
  * @Description : OlDraw 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -533,7 +533,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
    * ```
    */
   enableModify(style?: Style | StyleLike | FlatStyle) {
-    // 编辑器一般都是先选中要素，再修改，单选
+    // 编辑时一般都是先选中要素，再修改，需单选
     this.enableSelect({
       single: true,
     })
