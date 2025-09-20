@@ -130,7 +130,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // TODO 图层层级支持从构造函数传入
     zIndex,
     source: this.#source,
-    className: `ol-layer ol-draw-layer z-index:${zIndex}`,
+    className: `ol-layer geom-editor-layer z-index:${zIndex}`,
     // TODO 图层样式
   })
   #selected = new Collection<Feature<Geometry>>([])
