@@ -17,7 +17,7 @@ const guiYang3857 = fromLonLat(guiYang)
 
 // const olDraw = new OlDraw()
 const map = new Map({
-  target: 'ol-draw-test',
+  target: 'ol-geom-editor-map',
   layers: [
     new Tile({
       source: new OSM(),
