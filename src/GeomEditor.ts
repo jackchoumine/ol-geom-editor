@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 19:16:47
+ * @LastEditTime: 2025-09-21 19:47:12
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -107,18 +107,14 @@ type GeomEditorOptions = {
 }
 
 const highlightStyle = new Style({
-  fill: new Fill({
-    color: '#EEE',
-  }),
+  fill: new Fill({ color: 'rgba(255,255,255,0.5)' }),
   stroke: new Stroke({
-    color: '#3399CC',
-    width: 2,
+    width: 2.5,
+    color: 'red',
   }),
   image: new CircleStyle({
-    radius: 7,
-    fill: new Fill({
-      color: '#3399CC',
-    }),
+    radius: 5,
+    stroke: new Stroke({ width: 2.5, color: 'red' }),
   }),
 })
 

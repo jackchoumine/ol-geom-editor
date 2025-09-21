@@ -32,28 +32,16 @@ const map = new Map({
 
 const layerStyle = {
   'fill-color': 'rgba(255,255,255,0.4)',
-  'stroke-color': 'blue',
-  'stroke-width': 2,
+  'stroke-color': '#3399CC',
+  'stroke-width': 1.25,
   'circle-radius': 5,
   'circle-fill-color': 'rgba(255,255,255,0.4)',
-  'circle-stroke-width': 2,
+  'circle-stroke-width': 1.25,
   'circle-stroke-color': '#3399CC',
 }
 
 const olDraw = new GeomEditor(map, {
   layerStyle,
-  selectedStyle: new Style({
-    fill: new Fill({ color: 'red' }),
-    stroke: new Stroke({
-      width: 4,
-      color: 'green',
-    }),
-    image: new CircleStyle({
-      radius: 5,
-      fill: new Fill({ color: 'yellow' }),
-      stroke: new Stroke({ width: 4, color: '#3399CC' }),
-    }),
-  }),
 })
 
 olDraw.on('select', event => {
