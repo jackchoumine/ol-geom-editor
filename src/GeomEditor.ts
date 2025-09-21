@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 18:38:50
+ * @LastEditTime: 2025-09-21 18:53:54
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -100,6 +100,10 @@ type GeomEditorOptions = {
    * 图层类名，默认 ol-layer
    */
   className?: string
+  /**
+   * 选中的要素样式
+   */
+  selectedStyle?: StyleLike
 }
 
 const highlightStyle = new Style({
@@ -150,6 +154,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #singleSelectable = false
   #canFreehand = false
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
+  protected selectedStyle: StyleLike = highlightStyle
   constructor(map: Map, options: GeomEditorOptions = {}) {
     super()
     this.#map = map
@@ -624,7 +629,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #initOptions(options: GeomEditorOptions) {
-    const { layerStyle } = options
+    const { layerStyle, selectedStyle } = options
+    if (selectedStyle) {
+      this.selectedStyle = selectedStyle
+    }
     const z = zIndex + 1
     this.#layer = new VectorLayer({
       zIndex: z,
@@ -639,6 +647,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     if (features.length === 0) return
     const hasFeature = this.#map!.hasFeatureAtPixel(e.pixel)
     if (!hasFeature) {
+      // 点到非要素区域，取消所有选中
       this.#selected.forEach(feat => {
         feat.setStyle(undefined)
       })
@@ -656,7 +665,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         this.#selected.clear()
         if (!feat) {
           this.#selected.push(f)
-          f.setStyle(highlightStyle)
+          f.setStyle(this.selectedStyle)
         }
       } else {
         if (feat) {
@@ -664,7 +673,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
           f.setStyle(undefined)
         } else {
           this.#selected.push(f)
-          f.setStyle(highlightStyle)
+          f.setStyle(this.selectedStyle)
         }
       }
     }
