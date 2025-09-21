@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 18:02:11
+ * @LastEditTime: 2025-09-21 18:19:57
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -93,9 +93,13 @@ type GeomEditorOptions = {
    */
   // confirmOnRemoveAll?: Confirm | boolean
   /**
-   * 要素的默认样式
+   * 矢量图层样式
    */
-  style?: Style | StyleLike | FlatStyle
+  layerStyle?: Style | StyleLike | FlatStyle
+  /**
+   * 图层类名，默认 ol-layer
+   */
+  className?: string
 }
 
 const highlightStyle = new Style({
@@ -126,13 +130,7 @@ const zIndex = +Math.floor(Number.MAX_SAFE_INTEGER / 1000_0000)
 
 class GeomEditor extends BaseObject implements GeomEditorI {
   #source: VectorSource<Geometry> = new VectorSource()
-  #layer: VectorLayer<VectorSource<Geometry>> = new VectorLayer({
-    // TODO 图层层级支持从构造函数传入
-    zIndex,
-    source: this.#source,
-    className: `ol-layer geom-editor-layer z-index:${zIndex}`,
-    // TODO 图层样式
-  })
+  #layer: VectorLayer<VectorSource<Geometry>> | null = null
   #selected = new Collection<Feature<Geometry>>([])
   readonly #map: Map | null = null
   readonly #view: View | null = null
@@ -157,8 +155,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#map = map
     this.#view = map.getView()
     this.#mapProj = this.#view.getProjection().getCode() as ProjCode
-    this.#addLayer()
     this.#initOptions(options)
+    this.#addLayer()
     this.#onSourceChange()
     this.#onSelectedChange()
     // 点击选中或者取消选中要素
@@ -621,7 +619,16 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // TODO
   }
 
-  #initOptions(options: GeomEditorOptions) {}
+  #initOptions(options: GeomEditorOptions) {
+    const { layerStyle } = options
+    const z = zIndex + 1
+    this.#layer = new VectorLayer({
+      zIndex: z,
+      source: this.#source,
+      className: this.#geneClassName(options),
+      style: layerStyle,
+    })
+  }
 
   #whenSingleClick(e: MapBrowserEvent<MouseEvent>) {
     const features = this.#source.getFeatures()
@@ -743,6 +750,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #addLayer() {
+    if (!this.#layer) return
     this.#map?.addLayer(this.#layer)
   }
 
@@ -873,6 +881,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       return new GeomEditorMoveEvent(GeomEditorEventType.MOVE_END, dataList, features, _startAt, _endAt)
     }
     return new GeomEditorMoveEvent(GeomEditorEventType.MOVE_START, dataList, features, _startAt)
+  }
+  #geneClassName(options: GeomEditorOptions) {
+    const { className = 'ol-layer' } = options
+    return [className, `geom-editor-layer z-index:${zIndex + 1}`].join(' ')
   }
 }
 

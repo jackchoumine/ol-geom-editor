@@ -30,7 +30,19 @@ const map = new Map({
   }),
 })
 
-const olDraw = new GeomEditor(map)
+const layerStyle = {
+  'fill-color': 'rgba(255,255,255,0.4)',
+  'stroke-color': 'blue',
+  'stroke-width': 4,
+  'circle-radius': 5,
+  'circle-fill-color': 'rgba(255,255,255,0.4)',
+  'circle-stroke-width': 4,
+  'circle-stroke-color': '#3399CC',
+}
+
+const olDraw = new GeomEditor(map, {
+  layerStyle,
+})
 
 olDraw.on('select', event => {
   console.log({ event })
@@ -199,16 +211,6 @@ const flatStyle = {
   'circle-fill-color': '#ff0000',
   'circle-stroke-color': 'yellow',
   'circle-stroke-width': 2,
-}
-
-const defaultStyle = {
-  'fill-color': 'rgba(255,255,255,0.4)',
-  'stroke-color': '#3399CC',
-  'stroke-width': 1.25,
-  'circle-radius': 5,
-  'circle-fill-color': 'rgba(255,255,255,0.4)',
-  'circle-stroke-width': 1.25,
-  'circle-stroke-color': '#3399CC',
 }
 
 function onChangeType(e: Event) {
