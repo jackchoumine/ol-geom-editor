@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-18 03:00:53
+ * @LastEditTime: 2025-09-21 17:46:25
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -259,6 +259,14 @@ export abstract class GeomEditorI {
    * @param style 禁用编辑后的样式，不提供，恢复到启用修改的样式
    */
   abstract disableModify(id?: Id | Id[], style?: StyleLike): boolean
+  /**
+   *  启用捕获
+   */
+  abstract enableSnap(): void
+  /**
+   *  禁用捕获
+   */
+  abstract disableSnap(): void
 
   /**
    * 启用平移

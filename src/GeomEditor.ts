@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 17:42:52
+ * @LastEditTime: 2025-09-21 18:02:11
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -16,7 +16,7 @@ import { type Extent, createEmpty, extend } from 'ol/extent'
 import { GeoJSON, WKT } from 'ol/format'
 import { Circle, type Geometry, type SimpleGeometry } from 'ol/geom'
 import { circular } from 'ol/geom/Polygon'
-import { Draw, Modify, Translate } from 'ol/interaction'
+import { Draw, Modify, Snap, Translate } from 'ol/interaction'
 import type { DrawEvent } from 'ol/interaction/Draw'
 import type { TranslateEvent } from 'ol/interaction/Translate'
 import VectorLayer from 'ol/layer/Vector'
@@ -142,9 +142,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #translate = shallowRef<Translate>()
   #draw = shallowRef<Draw>()
   #drawingType: GeoType = 'None'
-  #selectOn: EventsKey | null = null
   #drawEndOn: EventsKey | null = null
   #drawStartOn: EventsKey | null = null
+  #selectOn: EventsKey | null = null
+  #snap: Snap | null = null
 
   #boxSelectable = false
   #multiSelectable = true
@@ -265,6 +266,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#drawingType = type
     // 只能同时启用一种绘制类型，先禁用之前的绘制
     this.disableDraw()
+    this.disableSnap()
     if (type === 'None') return
     this.disableSelect()
     this.disableModify()
@@ -345,10 +347,12 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         this.dispatchEvent(event)
       }
     })
+    this.enableSnap()
   }
 
   disableDraw() {
     if (!this.#map || !this.#draw.value) return
+    this.disableSnap()
     this.#map.removeInteraction(this.#draw.value)
     this.#draw.value = undefined
     unByKey(this.#drawEndOn!)
@@ -542,6 +546,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
     if (this.#modify.value) {
       this.#modify.value.setActive(true)
+      this.enableSnap()
       return
     }
     this.#modify.value = new Modify({
@@ -560,12 +565,28 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const _event = new GeomEditorModifyEvent(GeomEditorEventType.MODIFY_COMPLETE, dataList, event.features)
       this.dispatchEvent(_event)
     })
+    this.enableSnap()
   }
 
   disableModify(id?: Id | Id[], style?: StyleLike): boolean {
+    this.disableSnap()
     if (!this.#modify.value) return true
     this.#modify.value.setActive(false)
     return true
+  }
+
+  disableSnap() {
+    if (!this.#snap) return
+    this.#snap.setActive(false)
+  }
+
+  enableSnap() {
+    if (this.#snap) {
+      this.#snap.setActive(true)
+      return
+    }
+    this.#snap = new Snap({ source: this.#source })
+    this.#map?.addInteraction(this.#snap)
   }
 
   //  删除要素
