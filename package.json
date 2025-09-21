@@ -64,6 +64,8 @@
     "openLayers",
     "ol-extension-editor",
     "ol-geom-editor",
+    "ol-geom-modify",
+    "ol-modify-shapes",
     "ol-ex",
     "ol-draw-geometry",
     "ol-edit-geometry",
