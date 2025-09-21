@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 18:19:57
+ * @LastEditTime: 2025-09-21 18:38:50
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -583,7 +583,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.#snap.setActive(true)
       return
     }
-    this.#snap = new Snap({ source: this.#source })
+    this.#snap = new Snap({
+      source: this.#source,
+      // @ts-ignore
+      intersection: true,
+    })
     this.#map?.addInteraction(this.#snap)
   }
 
