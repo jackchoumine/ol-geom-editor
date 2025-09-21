@@ -2,8 +2,8 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 01:17:27
- * @Description : OlDraw 类
+ * @LastEditTime: 2025-09-21 17:42:52
+ * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
 import Collection, { CollectionEvent } from 'ol/Collection'
