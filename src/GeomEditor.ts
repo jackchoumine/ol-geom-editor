@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 18:53:54
+ * @LastEditTime: 2025-09-21 19:16:47
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -155,6 +155,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #canFreehand = false
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
   protected selectedStyle: StyleLike = highlightStyle
+  protected modifyingStyle: Style | StyleLike | FlatStyle | null | undefined = null
   constructor(map: Map, options: GeomEditorOptions = {}) {
     super()
     this.#map = map
@@ -552,8 +553,12 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.enableSnap()
       return
     }
+    if (style !== null) {
+      this.modifyingStyle = style
+    }
     this.#modify.value = new Modify({
       features: this.#selected,
+      style: this.modifyingStyle !== null ? this.modifyingStyle : undefined,
     })
     this.#map?.addInteraction(this.#modify.value)
     this.#modify.value.on('modifystart', event => {
