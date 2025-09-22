@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 03:09:22
+ * @LastEditTime: 2025-09-23 03:20:54
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -33,6 +33,7 @@ import { debounce } from 'petite-utils'
 import { shallowRef } from 'vue'
 
 import {
+  GeomEditorCompleteEvent,
   GeomEditorDeselectEvent,
   GeomEditorDrawEvent,
   GeomEditorEventType,
@@ -724,9 +725,22 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     return Promise.resolve(true)
   }
 
-  // 编辑完毕
+  /**
+   * 编辑完毕
+   */
   completeEdit(): void {
-    // TODO
+    this.#selected.forEach(f => {
+      f.setStyle(undefined)
+    })
+    this.#selected.clear()
+    this.disableDraw()
+    this.disableFreehand()
+    this.disableModify()
+    this.disableTranslate()
+    const features = this.#source.getFeatures()
+    const array = this.#convertFeaturesToData(features)
+    const completeEvent = new GeomEditorCompleteEvent(array, features)
+    this.dispatchEvent(completeEvent)
   }
 
   protected render() {
@@ -780,7 +794,6 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const btn = target.closest('button')
       if (!btn) return
       const type = btn.dataset.type as string
-      console.log({ type, drawingType: this.#drawingType }, 'zqj')
       if (this.drawTypes.includes(type as GeoType)) {
         if (this.#drawingType === type) {
           this.disableDraw()
@@ -813,8 +826,6 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       }
     })
   }
-
-  #setupAutoRender() {}
 
   #initOptions(options: GeomEditorOptions) {
     const { layerStyle, selectedStyle } = options
@@ -1078,7 +1089,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       geojsonObj,
     }
   }
-  #emitRemove() {}
+
   #emitMoveStart(event: TranslateEvent) {
     const { features, startCoordinate } = event
     this.dispatchEvent(this.#createMoveEvent(features, startCoordinate))
