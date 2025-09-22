@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 00:10:11
+ * @LastEditTime: 2025-09-23 00:34:53
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -374,6 +374,13 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         if (t === type) return 'next loop'
         this.#setSelectedBtn(t, false)
       })
+      if (!canFreehandType.includes(this.#drawingType)) {
+        // 不支持自由绘制
+        this.disableFreehand()
+      } else {
+        // 支持自由绘制
+        this.#enableBtn('freehand', true, `enable freehand draw.`)
+      }
     }
   }
 
@@ -390,11 +397,20 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#canFreehand = true
     if (!canFreehandType.includes(this.#drawingType)) return
     this.enableDraw(this.#drawingType)
+    if (this.showToolBar) {
+      this.#setSelectedBtn('freehand', true)
+    }
   }
 
   disableFreehand() {
     this.#canFreehand = false
-    if (!canFreehandType.includes(this.#drawingType)) return
+    if (this.showToolBar) {
+      this.#setSelectedBtn('freehand', false)
+    }
+    if (!canFreehandType.includes(this.#drawingType)) {
+      this.#enableBtn('freehand', false, `current geometry type don't support freehand draw.`)
+      return
+    }
     if (this.sketchStyle) {
       this.enableDraw(this.#drawingType, this.sketchStyle)
     } else {
@@ -710,6 +726,14 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       console.log({ type, btn }, 'zqj')
       if (this.drawTypes.includes(type as GeoType)) {
         this.enableDraw(type as GeoType)
+      } else if (type === 'freehand') {
+        // 开启自由绘制
+        console.log({ type })
+        if (this.#canFreehand) {
+          this.disableFreehand()
+        } else {
+          this.enableFreehand()
+        }
       }
     })
   }
