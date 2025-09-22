@@ -18,7 +18,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && npm run build:sass",
+    "build:sass": "sass ./src/geom-editor.scss  dist/geom-editor.css --style=compressed --no-source-map",
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
@@ -42,6 +43,7 @@
     "lint-staged": "^16.1.6",
     "ol": "^7.5.2",
     "prettier": "^3.6.2",
+    "sass": "^1.93.0",
     "simple-git-hooks": "^2.13.1",
     "tsdown": "^0.11.9",
     "typescript": "^5.8.3",
