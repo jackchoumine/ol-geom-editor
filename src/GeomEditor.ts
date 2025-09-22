@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 01:10:36
+ * @LastEditTime: 2025-09-23 01:29:24
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -171,6 +171,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   protected selectedStyle: StyleLike = highlightStyle
   protected modifyingStyle: Style | StyleLike | FlatStyle | null | undefined = null
   protected toolBarContainer: HTMLElement | null = null
+  protected enableModifier: boolean = false
   constructor(map: Map, options: GeomEditorOptions = {}) {
     super()
     this.#map = map
@@ -290,7 +291,16 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // 只能同时启用一种绘制类型，先禁用之前的绘制
     this.disableDraw()
     this.disableSnap()
-    if (type === 'None') return
+    if (type === 'None') {
+      if (this.showToolBar) {
+        this.drawTypes.forEach(t => {
+          this.#setSelectedBtn(t, false)
+        })
+        // 支持自由绘制
+        this.#enableBtn('freehand', true, `enable freehand draw.`)
+      }
+      return
+    }
     this.disableSelect()
     this.disableModify()
     this.disableTranslate()
@@ -392,6 +402,13 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   disableDraw() {
     if (!this.#map || !this.#draw.value) return
     this.disableSnap()
+    if (this.showToolBar) {
+      this.drawTypes.forEach(t => {
+        this.#setSelectedBtn(t, false)
+      })
+      // 支持自由绘制
+      this.#enableBtn('freehand', true, `enable freehand draw.`)
+    }
     this.#map.removeInteraction(this.#draw.value)
     this.#draw.value = undefined
     unByKey(this.#drawEndOn!)
@@ -591,7 +608,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     })
     this.disableTranslate()
     this.disableDraw()
-
+    this.enableModifier = true
+    if (this.showToolBar) {
+      this.#setSelectedBtn('modify', true)
+    }
     if (this.#modify.value) {
       this.#modify.value.setActive(true)
       this.enableSnap()
@@ -622,6 +642,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   disableModify(id?: Id | Id[], style?: StyleLike): boolean {
     this.disableSnap()
+    this.enableModifier = false
+    if (this.showToolBar) {
+      this.#setSelectedBtn('modify', false)
+    }
     if (!this.#modify.value) return true
     this.#modify.value.setActive(false)
     return true
@@ -733,11 +757,16 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         this.enableDraw(type as GeoType)
       } else if (type === 'freehand') {
         // 开启自由绘制
-        console.log({ type })
         if (this.#canFreehand) {
           this.disableFreehand()
         } else {
           this.enableFreehand()
+        }
+      } else if (type === 'modify') {
+        if (this.enableModifier) {
+          this.disableModify()
+        } else {
+          this.enableModify()
         }
       }
     })
