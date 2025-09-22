@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-22 23:47:39
+ * @LastEditTime: 2025-09-23 00:10:11
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -164,6 +164,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
   protected selectedStyle: StyleLike = highlightStyle
   protected modifyingStyle: Style | StyleLike | FlatStyle | null | undefined = null
+  protected toolBarContainer: HTMLElement | null = null
   constructor(map: Map, options: GeomEditorOptions = {}) {
     super()
     this.#map = map
@@ -173,7 +174,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#addLayer()
     this.#onSourceChange()
     this.#onSelectedChange()
-    this.render()
+
+    if (this.showToolBar) {
+      // 渲染按钮
+      this.render()
+    }
     // 点击选中或者取消选中要素
     this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
     // 设置鼠标样式
@@ -361,6 +366,15 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       }
     })
     this.enableSnap()
+
+    if (this.showToolBar) {
+      // 渲染了 toolBar，就要改变按钮状态
+      this.#setSelectedBtn(type, true)
+      this.drawTypes.forEach(t => {
+        if (t === type) return 'next loop'
+        this.#setSelectedBtn(t, false)
+      })
+    }
   }
 
   disableDraw() {
@@ -645,7 +659,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   protected render() {
     this.#renderToolBar()
     //this.#setupAutoRender()
-    //this.#setupEvents()
+    this.#setupEvents()
   }
 
   /**
@@ -683,7 +697,23 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       btnContainer.appendChild(btnElement)
     })
     controlContainer!.appendChild(btnContainer)
+    this.toolBarContainer = btnContainer
   }
+
+  #setupEvents() {
+    if (!this.toolBarContainer) return
+    this.toolBarContainer.addEventListener('click', (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      const btn = target.closest('button')
+      if (!btn) return
+      const type = btn.dataset.type as string
+      console.log({ type, btn }, 'zqj')
+      if (this.drawTypes.includes(type as GeoType)) {
+        this.enableDraw(type as GeoType)
+      }
+    })
+  }
+
   #setupAutoRender() {}
 
   #initOptions(options: GeomEditorOptions) {
@@ -975,6 +1005,28 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #geneClassName(options: GeomEditorOptions) {
     const { className = 'ol-layer' } = options
     return [className, `geom-editor-layer z-index:${zIndex + 1}`].join(' ')
+  }
+
+  #setSelectedBtn(type: string, isActive: boolean) {
+    const btn = this.#queryBtn(type)
+    if (!btn) return
+    if (isActive) {
+      btn.classList.remove('hidden')
+      btn?.classList.add('selected')
+    } else {
+      btn?.classList.remove('selected')
+    }
+  }
+
+  #enableBtn(type: string, enable: boolean, title: string) {
+    const btn = this.#queryBtn(type)
+    if (!btn) return
+    btn.disabled = enable === false
+    btn.title = title
+  }
+
+  #queryBtn(type: string) {
+    return this.toolBarContainer?.querySelector(`[data-type="${type}"]`) as HTMLButtonElement
   }
 }
 
