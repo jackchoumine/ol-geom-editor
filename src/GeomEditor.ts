@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 01:29:24
+ * @LastEditTime: 2025-09-23 01:39:26
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -172,6 +172,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   protected modifyingStyle: Style | StyleLike | FlatStyle | null | undefined = null
   protected toolBarContainer: HTMLElement | null = null
   protected enableModifier: boolean = false
+  protected enableMover: boolean = false
   constructor(map: Map, options: GeomEditorOptions = {}) {
     super()
     this.#map = map
@@ -563,9 +564,13 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.enableSelect({
       multi: true,
     })
+    this.enableMover = true
     // 禁用修改和绘制
     this.disableModify()
     this.disableDraw()
+    if (this.showToolBar) {
+      this.#setSelectedBtn('move', true)
+    }
     if (this.#translate.value) {
       this.#translate.value.setActive(true)
       return true
@@ -586,6 +591,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   disableTranslate(id?: Id): boolean {
+    this.enableMover = false
+    this.#setSelectedBtn('move', false)
     if (!this.#translate.value) return true
     this.#translate.value.setActive(false)
     return true
@@ -767,6 +774,12 @@ class GeomEditor extends BaseObject implements GeomEditorI {
           this.disableModify()
         } else {
           this.enableModify()
+        }
+      } else if (type === 'move') {
+        if (this.enableMover) {
+          this.disableTranslate()
+        } else {
+          this.enableTranslate()
         }
       }
     })
