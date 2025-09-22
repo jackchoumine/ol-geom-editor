@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 19:47:12
+ * @LastEditTime: 2025-09-21 22:13:22
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -41,7 +41,9 @@ import {
   GeomEditorSelectEvent,
 } from './GeomEditorEvents'
 import {
+  type Button,
   type DeselectOptions,
+  type ElementOf,
   type FeatureOptions,
   type FitOptions,
   type GeoType,
@@ -53,15 +55,19 @@ import {
   type ProjCode,
   type SelectModeOptions,
   type SelectOptions,
+  buttons,
 } from './GeomEditorI'
 import { genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } from './utils'
 
 //import type { GeometryFunction } from 'ol/style/Style'
-const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
+const DEFAULT_ACTIONS = ['remove', 'modify', 'move', 'complete'] as const
 
+const DEFAULT_GEOM_TYPES: GeoType[] = ['Point', 'LineString', 'Polygon', 'Circle']
 // type ElementOf<T extends readonly unknown[]> = T[number]
 
 type Action = (typeof DEFAULT_ACTIONS)[number]
+
+const olBrandColor = getComputedStyle(document.documentElement).getPropertyValue('--ol-foreground-color') //?? '#00AAFF'
 
 type GeomEditorOptions = {
   /**
@@ -85,7 +91,7 @@ type GeomEditorOptions = {
   /**
    * 其他操作
    *
-   * 默认 ['remove', 'modify', 'translate', 'complete']
+   * 默认 ['remove', 'modify', 'move', 'complete']
    */
   actions?: Action[]
   /**
@@ -149,6 +155,12 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #multiSelectable = true
   #singleSelectable = false
   #canFreehand = false
+
+  protected supportFreehand: boolean = true
+  protected showToolBar: boolean = true
+  protected actions: Action[] = ['modify', 'move', 'remove', 'complete']
+  protected drawTypes: GeoType[] = DEFAULT_GEOM_TYPES
+  protected allButtons: Button[] = buttons
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
   protected selectedStyle: StyleLike = highlightStyle
   protected modifyingStyle: Style | StyleLike | FlatStyle | null | undefined = null
@@ -161,6 +173,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#addLayer()
     this.#onSourceChange()
     this.#onSelectedChange()
+    this.render()
     // 点击选中或者取消选中要素
     this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
     // 设置鼠标样式
@@ -629,6 +642,52 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // TODO
   }
 
+  protected render() {
+    this.#renderToolBar()
+    //this.#setupAutoRender()
+    //this.#setupEvents()
+  }
+
+  /**
+   * 渲染 toolBar
+   */
+  #renderToolBar() {
+    if (!this.#map?.getTargetElement()) return
+    const map = this.#map
+    const controlContainer = map.getTargetElement().querySelector('.ol-overlaycontainer-stopevent')
+    const btnContainer = document.createElement('div')
+    btnContainer.classList.add('geom-editor-tool-bar')
+    btnContainer.classList.add('ol-control')
+    btnContainer.style = 'pointer-events: auto;'
+
+    this.allButtons.forEach(btn => {
+      const btnElement = document.createElement('button')
+      btnElement.classList.add('geom-editor-btn')
+
+      const action = btn.name as ElementOf<typeof DEFAULT_ACTIONS>
+      const isDefaultAction = DEFAULT_ACTIONS.includes(action)
+      if (isDefaultAction) {
+        if (action === 'complete') {
+          btnElement.disabled = true
+          btnElement.title = ''
+        } else if (this.#source.getFeatures().length) {
+          // 四个操作默认禁用
+          btnElement.disabled = false
+          //btnElement.title = TITLE_MAP[action]
+        } else {
+          btnElement.disabled = true
+          btnElement.title = ''
+        }
+      }
+      btnElement.innerHTML = btn.icon(olBrandColor)
+      btnElement.title = btn.title
+      btnElement.dataset.type = btn.type
+      btnContainer.appendChild(btnElement)
+    })
+    controlContainer!.appendChild(btnContainer)
+  }
+  #setupAutoRender() {}
+
   #initOptions(options: GeomEditorOptions) {
     const { layerStyle, selectedStyle } = options
     if (selectedStyle) {
@@ -641,6 +700,25 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       className: this.#geneClassName(options),
       style: layerStyle,
     })
+
+    this.supportFreehand = options?.supportFreehand !== false
+    this.showToolBar = options?.showToolBar !== false
+
+    if (Array.isArray(options.actions)) {
+      this.actions = options.actions
+    }
+    if (Array.isArray(options.drawTypes)) {
+      this.drawTypes = options.drawTypes
+    }
+    // 几何类型
+    const _types = buttons.filter(btn => this.drawTypes.includes(btn.type as GeoType))
+    // 是否支持自由绘制
+    if (this.supportFreehand) {
+      _types.push(buttons.find(btn => btn.name === 'freehand')!)
+    }
+    // 操作
+    const _actions = buttons.filter(btn => this.actions.includes(btn.name as Action))
+    this.allButtons = [..._types, ..._actions]
   }
 
   #whenSingleClick(e: MapBrowserEvent<MouseEvent>) {

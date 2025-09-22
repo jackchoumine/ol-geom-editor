@@ -1,0 +1,96 @@
+.geom-editor-tool-bar {
+  display: flex;
+  flex-direction: column;
+  top: 50%;
+  transform: translate(0, -50%);
+  right: 10px;
+  .geom-editor-btn {
+    width: 1.75em;
+    height: 1.75em;
+    border: none;
+    border-radius: 2px;
+    /* top bottom */
+    /* margin: 0 0.5rem; */
+    /* left right */
+    margin: 0.05em 0;
+    padding: 0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    background-color: var(--ol-accent-background-color);
+    &:not(:disabled):not(.selected):hover {
+      background-color: #ddd; // var(--ol-subtle-foreground-color);
+      border: none;
+      outline: none;
+    }
+    &.selected {
+      background-color: var(--ol-brand-color);
+    }
+    // 默认隐藏移除
+    &.hidden {
+      display: none;
+    }
+    &:is(:disabled) {
+      background-color: #b1b3b8;
+      cursor: not-allowed;
+      border: gray 1px solid;
+    }
+  }
+}
+
+/* 弹窗样式 */
+.remove-all-confirm {
+  position: absolute;
+  display: none;
+  z-index: 9999;
+  min-width: 180px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  .actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+
+    .button {
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+
+      &.primary {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+      }
+    }
+  }
+  .arrow {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    transform: rotate(225deg);
+  }
+  // 根据 placement 动态边框
+  &[data-placement^='top'] .arrow {
+    border-left: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+  }
+  &[data-placement^='bottom'] .arrow {
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+  &[data-placement^='left'] .arrow {
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+  &[data-placement^='right'] .arrow {
+    border-top: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+  }
+}
