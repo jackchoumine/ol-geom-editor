@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-13 21:51:45
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 00:47:01
+ * @LastEditTime: 2025-09-23 03:03:44
  * @Description : olGeometryEditor 自定义事件
  */
 import { Collection, type Feature } from 'ol'
@@ -38,6 +38,29 @@ enum GeomEditorEventType {
   MOVE_END = 'moveEnd',
   MODIFY_BEGIN = 'modifyBegin',
   MODIFY_COMPLETE = 'modifyComplete',
+  /**
+   * 移除要素
+   */
+  REMOVE = 'remove',
+}
+
+class GeomEditorRemoveEvent extends BaseEvent {
+  removeFeatures
+  removeArray
+  remainArray
+  remainFeatures
+  constructor(
+    removeArray: GeometryData[],
+    removeFeatures: Feature<Geometry>[],
+    remainArray: GeometryData[],
+    remainFeatures: Feature<Geometry>[],
+  ) {
+    super(GeomEditorEventType.REMOVE)
+    this.removeArray = removeArray
+    this.removeFeatures = removeFeatures
+    this.remainArray = remainArray
+    this.remainFeatures = remainFeatures
+  }
 }
 
 class GeomEditorSelectEvent extends SelectEvent {
@@ -147,6 +170,7 @@ export {
   GeomEditorEventType,
   GeomEditorSelectEvent,
   GeomEditorDeselectEvent,
+  GeomEditorRemoveEvent,
   GeomEditorDrawEvent,
   GeomEditorMoveEvent,
   GeomEditorModifyEvent,

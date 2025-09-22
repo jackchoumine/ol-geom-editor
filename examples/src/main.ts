@@ -92,6 +92,9 @@ olDraw.on('modifyBegin', event => {
 olDraw.on('modifyComplete', event => {
   console.log({ event })
 })
+olDraw.on('remove', event => {
+  console.log({ event })
+})
 
 document.querySelector('#add-wkt')!.addEventListener('click', addWKT)
 document.querySelector('#add-JSON')!.addEventListener('click', addJSON)

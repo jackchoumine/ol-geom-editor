@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 02:43:29
+ * @LastEditTime: 2025-09-23 03:09:22
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -38,6 +38,7 @@ import {
   GeomEditorEventType,
   GeomEditorModifyEvent,
   GeomEditorMoveEvent,
+  GeomEditorRemoveEvent,
   GeomEditorSelectEvent,
 } from './GeomEditorEvents'
 import {
@@ -681,21 +682,39 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   //  删除要素
   removeFeatures(id?: Id | Id[]) {
     if (id === null || id === undefined) {
+      const removeFeatures = this.#selected.getArray().slice()
+      const removeArray = this.#convertFeaturesToData(removeFeatures)
       this.#selected.forEach(f => {
         this.#source.removeFeature(f)
       })
       this.#selected.clear()
+      const remainFeatures = this.#source.getFeatures().slice()
+      const remainArray = this.#convertFeaturesToData(remainFeatures)
+      const removeEvent = new GeomEditorRemoveEvent(removeArray, removeFeatures, remainArray, remainFeatures)
+      this.dispatchEvent(removeEvent)
       return
     }
+
     const ids = Array.isArray(id) ? id : [id]
+    const removes: Feature<Geometry>[] = []
     ids.forEach(id => {
       const feature = this.#source.getFeatureById(id)
       if (feature) {
+        removes.push(feature)
         this.#source.removeFeature(feature)
         this.#selected.remove(feature)
       }
     })
-    // TODO 抛出事件
+
+    const remainFeatures = this.#selected.getArray()
+    const remainArray = this.#convertFeaturesToData(remainFeatures)
+    const removeEvent = new GeomEditorRemoveEvent(
+      this.#convertFeaturesToData(removes),
+      removes,
+      remainArray,
+      remainFeatures,
+    )
+    this.dispatchEvent(removeEvent)
   }
 
   removeAllFeatures() {
@@ -789,6 +808,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         }
       } else if (type === 'remove') {
         this.removeFeatures()
+      } else {
+        this.completeEdit()
       }
     })
   }
@@ -1057,7 +1078,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       geojsonObj,
     }
   }
-
+  #emitRemove() {}
   #emitMoveStart(event: TranslateEvent) {
     const { features, startCoordinate } = event
     this.dispatchEvent(this.#createMoveEvent(features, startCoordinate))
