@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 03:20:54
+ * @LastEditTime: 2025-09-23 03:32:21
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -394,7 +394,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       })
       if (!canFreehandType.includes(this.#drawingType)) {
         // 不支持自由绘制
-        this.disableFreehand()
+        this.#canFreehand = false
+        this.#setSelectedBtn('freehand', false)
+        this.#enableBtn('freehand', false, `cannot freehand draw.`)
       } else {
         // 支持自由绘制
         this.#enableBtn('freehand', true, `enable freehand draw.`)
