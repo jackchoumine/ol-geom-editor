@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 01:39:26
+ * @LastEditTime: 2025-09-23 02:04:18
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -288,10 +288,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   enableDraw(type: GeoType, style?: Style | StyleLike | FlatStyle): void {
     if (!this.#map) return
-    this.#drawingType = type
     // 只能同时启用一种绘制类型，先禁用之前的绘制
     this.disableDraw()
     this.disableSnap()
+    this.#drawingType = type
     if (type === 'None') {
       if (this.showToolBar) {
         this.drawTypes.forEach(t => {
@@ -402,6 +402,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   disableDraw() {
     if (!this.#map || !this.#draw.value) return
+    this.#drawingType = 'None'
     this.disableSnap()
     if (this.showToolBar) {
       this.drawTypes.forEach(t => {
@@ -759,9 +760,13 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const btn = target.closest('button')
       if (!btn) return
       const type = btn.dataset.type as string
-      console.log({ type, btn }, 'zqj')
+      console.log({ type, drawingType: this.#drawingType }, 'zqj')
       if (this.drawTypes.includes(type as GeoType)) {
-        this.enableDraw(type as GeoType)
+        if (this.#drawingType === type) {
+          this.disableDraw()
+        } else {
+          this.enableDraw(type as GeoType)
+        }
       } else if (type === 'freehand') {
         // 开启自由绘制
         if (this.#canFreehand) {
