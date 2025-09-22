@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 22:13:22
+ * @LastEditTime: 2025-09-22 23:47:39
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -669,11 +669,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       if (isDefaultAction) {
         if (action === 'complete') {
           btnElement.disabled = true
-          btnElement.title = ''
         } else if (this.#source.getFeatures().length) {
           // 四个操作默认禁用
           btnElement.disabled = false
-          //btnElement.title = TITLE_MAP[action]
         } else {
           btnElement.disabled = true
           btnElement.title = ''
