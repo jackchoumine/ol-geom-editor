@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 02:04:18
+ * @LastEditTime: 2025-09-23 02:39:58
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -419,21 +419,20 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   enableFreehand() {
     this.#canFreehand = true
-    if (!canFreehandType.includes(this.#drawingType)) return
-    this.enableDraw(this.#drawingType)
     if (this.showToolBar) {
       this.#setSelectedBtn('freehand', true)
     }
+    if (!canFreehandType.includes(this.#drawingType)) return
+    this.enableDraw(this.#drawingType)
   }
 
   disableFreehand() {
     this.#canFreehand = false
     if (this.showToolBar) {
       this.#setSelectedBtn('freehand', false)
-    }
-    if (!canFreehandType.includes(this.#drawingType)) {
-      this.#enableBtn('freehand', false, `current geometry type don't support freehand draw.`)
-      return
+      if (!canFreehandType.includes(this.#drawingType) && this.#drawingType !== 'None') {
+        this.#enableBtn('freehand', false, `current geometry type don't support freehand draw.`)
+      }
     }
     if (this.sketchStyle) {
       this.enableDraw(this.#drawingType, this.sketchStyle)
@@ -569,6 +568,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // 禁用修改和绘制
     this.disableModify()
     this.disableDraw()
+    this.disableFreehand()
     if (this.showToolBar) {
       this.#setSelectedBtn('move', true)
     }
@@ -616,6 +616,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     })
     this.disableTranslate()
     this.disableDraw()
+    this.disableFreehand()
     this.enableModifier = true
     if (this.showToolBar) {
       this.#setSelectedBtn('modify', true)
