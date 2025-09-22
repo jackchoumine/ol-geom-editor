@@ -6,8 +6,8 @@ import { fromLonLat } from 'ol/proj'
 import { OSM } from 'ol/source'
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 
-import { GeomEditor } from '../../src/GeomEditor.ts'
-import '../../src/styles/geom-editor.scss'
+import '../../dist/geom-editor.css'
+import { GeomEditor } from '../../dist/index.js'
 
 import './style.css'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
