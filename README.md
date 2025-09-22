@@ -15,7 +15,7 @@ npm i ol-geom-editor
 then
 
 ```js
-import { GeomEditor } from 'ol-geom-editor'
+import { GeomEditor } from olGeomEditor
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
@@ -29,14 +29,14 @@ const geomEditor = new GeomEditor(olMap) // pass ol map instance
 then
 
 ```js
-const { GeomEditor } = 'olGeomEditor'
+const { GeomEditor } = olGeomEditor
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
 
 ## create a geomEditor instance
 
-GeomEditor has two params :
+GeomEditor has two params:
 
 ```js
 GeomEditor(olMapInstance, options)
@@ -48,8 +48,8 @@ options has some props:
 | --------------- | ------------------------------- | -------------------------------------------- | ---------------------------- |
 | showToolBar     | boolean                         | true                                         | render tool bar or not       |
 | supportFreehand | boolean                         | true                                         | support freehand draw or not |
-| drawTypes       | Array<string>                   | ['Point', 'LineString', 'Polygon', 'Circle'] | draw geometry types          |
-| actions         | Array<string>                   | ['remove', 'modify', 'move', 'complete']     | operations on geometry       |
+| drawTypes       | Array                           | ['Point', 'LineString', 'Polygon', 'Circle'] | draw geometry types          |
+| actions         | Array                           | ['remove', 'modify', 'move', 'complete']     | operations on geometry       |
 | layerStyle      | Style \| StyleLike \| FlatStyle | openLayers default feature style             | default feature style        |
 | selectedStyle   | StyleLike                       | below                                        | feature style after style    |
 
@@ -69,7 +69,24 @@ const selectedStyle = new Style({
 })
 ```
 
-## core functions
+## GeomEditor has some functions
+
+| function           | desc                                     |
+| ------------------ | ---------------------------------------- |
+| addFeatureFromWKT  | add feature by wkt                       |
+| addFeatureFromJSON | add feature by GeoJSON or GeoJSON Object |
+| enableDraw         | enable draw interaction                  |
+| disableDraw        | disable draw interaction                 |
+| enableFreehand     | enable freehand draw                     |
+| disableFreehand    | disable freehand draw                    |
+| select             | select features                          |
+| deselect           | deselect features                        |
+| enableSelect       | enable select interaction                |
+| disableSelect      | disable select interaction               |
+| enableModify       | enable modify interaction                |
+| disableModify      | disable modify interaction               |
+| removeFeatures     | remove features                          |
+| completeEdit       | complete edit                            |
 
 ### add features
 
