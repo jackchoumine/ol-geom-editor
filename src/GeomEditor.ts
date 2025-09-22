@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 00:34:53
+ * @LastEditTime: 2025-09-23 01:04:21
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -134,6 +134,12 @@ const canFreehandType: GeoType[] = ['LineString', 'Polygon'] as const
 // 绘制图层的 zIndex 设置为一个很大的值（超过9亿），确保在最上层显示
 const zIndex = +Math.floor(Number.MAX_SAFE_INTEGER / 1000_0000)
 
+const ACTION_TITLE = {
+  remove: 'remove geometry',
+  move: 'move geometry',
+  modify: 'modify geometry',
+  complete: 'complete edit geometry',
+}
 class GeomEditor extends BaseObject implements GeomEditorI {
   #source: VectorSource<Geometry> = new VectorSource()
   #layer: VectorLayer<VectorSource<Geometry>> | null = null
@@ -695,7 +701,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       btnElement.classList.add('geom-editor-btn')
 
       const action = btn.name as ElementOf<typeof DEFAULT_ACTIONS>
-      const isDefaultAction = DEFAULT_ACTIONS.includes(action)
+      const isDefaultAction = this.actions.includes(action)
       if (isDefaultAction) {
         if (action === 'complete') {
           btnElement.disabled = true
@@ -841,23 +847,28 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     })
 
     // 添加新要素
-    this.#source.on('addfeature', () => {
-      DEFAULT_ACTIONS.forEach(action => {
-        //if (action !== 'complete') {
-        //this.#enableBtn(action, true, TITLE_MAP[action])
-        //}
-      })
-    })
-    // 移除要素
-    this.#source.on('removefeature', () => {
-      const hasFeature = this.#source.getFeatures().length > 0
-      console.log({ hasFeature }, 'zqj removeFeature')
-      if (!hasFeature) {
-        //this.#enableBtn('modify', false, '')
-        //this.#enableBtn('remove', false, '')
-        //this.#enableBtn('translate', false, '')
+    let hasFeature = false
+    const onAddFeature = () => {
+      if (this.showToolBar && !hasFeature) {
+        this.actions.forEach(action => {
+          this.#enableBtn(action, true, ACTION_TITLE[action])
+        })
+        hasFeature = true
       }
-    })
+    }
+    this.#source.on('addfeature', onAddFeature)
+
+    // 移除要素
+    const onRemoveFeature = () => {
+      hasFeature = this.#source.getFeatures().length > 0
+      if (!hasFeature && this.showToolBar) {
+        this.actions.forEach(action => {
+          if (action === 'complete') return 'next loop'
+          this.#enableBtn(action, false, '')
+        })
+      }
+    }
+    this.#source.on('removefeature', debounce(onRemoveFeature))
   }
 
   #onSelectedChange() {
