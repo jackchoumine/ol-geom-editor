@@ -6,14 +6,20 @@ import { fromLonLat } from 'ol/proj'
 import { OSM } from 'ol/source'
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 
+//import { GeomEditor } from '../../dist/index.js'
+//import '../../dist/geom-editor.css'
+//@ts-ignore
+import readme from '../../README.md'
 import { GeomEditor } from '../../src/GeomEditor'
 import '../../src/geom-editor.scss'
 
-//import { GeomEditor } from '../../dist/index.js'
-//import '../../dist/geom-editor.css'
-
+import './reset.css'
 import './style.css'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
+
+import './docs.scss'
+
+document.querySelector('.docs').innerHTML = readme
 
 const guiYang = [106.675271, 26.579508]
 

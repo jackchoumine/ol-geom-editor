@@ -11,7 +11,8 @@
   "devDependencies": {
     "sass": "^1.93.0",
     "typescript": "~5.8.3",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vite-plugin-md-to-html": "^0.0.18"
   },
   "homepage": "https://github.com/author/library#readme",
   "bugs": {

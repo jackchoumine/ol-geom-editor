@@ -1,0 +1,45 @@
+.docs {
+  display: flex;
+  flex-direction: column;
+  padding: 40px 20px;
+  h1,
+  h2,
+  h3,
+  h4 {
+    background-color: #101828;
+    min-height: 48px;
+    color: white;
+    margin: 10px 0;
+    padding: 0 10px;
+    border-radius: 4px;
+  }
+  h4,
+  h3 {
+    min-height: 44px;
+    font-size: 1.5rem;
+  }
+}
+
+table {
+  thead tr {
+    background-color: var(--ol-subtle-foreground-color);
+    color: white;
+    font-weight: bold;
+  }
+  tr {
+    height: 36px;
+  }
+
+  tr:nth-child(even) {
+    background-color: #e6e6e6;
+  }
+
+  /*tr:nth-child(odd) {
+    background-color: #f9f9f9;
+  }*/
+
+  td {
+    /*min-width: 360px;*/
+    padding: 0 16px;
+  }
+}
