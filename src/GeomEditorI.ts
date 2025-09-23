@@ -442,8 +442,8 @@ viewBox="0 0 24 24">
     },
   },
   {
-    name: 'move',
-    type: 'move',
+    name: 'translate',
+    type: 'translate',
     title: '移动要素',
     icon: (color: string) => {
       return `<svg

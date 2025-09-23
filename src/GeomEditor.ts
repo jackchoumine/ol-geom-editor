@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:29:43
+ * @LastEditTime: 2025-09-24 01:40:25
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -62,7 +62,7 @@ import {
 import { genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } from './utils'
 
 //import type { GeometryFunction } from 'ol/style/Style'
-const DEFAULT_ACTIONS = ['remove', 'modify', 'move', 'complete'] as const
+const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
 
 const DEFAULT_GEOM_TYPES: GeomType[] = ['Point', 'LineString', 'Polygon', 'Circle']
 // type ElementOf<T extends readonly unknown[]> = T[number]
@@ -93,7 +93,7 @@ type GeomEditorOptions = {
   /**
    * 其他操作
    *
-   * 默认 ['remove', 'modify', 'move', 'complete']
+   * 默认 ['remove', 'modify', 'translate', 'complete']
    */
   actions?: Action[]
   /**
@@ -138,7 +138,7 @@ const zIndex = +Math.floor(Number.MAX_SAFE_INTEGER / 1000_0000)
 
 const ACTION_TITLE = {
   remove: 'remove geometry',
-  move: 'move geometry',
+  translate: 'translate geometry',
   modify: 'modify geometry',
   complete: 'complete edit geometry',
 }
@@ -166,7 +166,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   protected supportFreehand: boolean = true
   protected showToolBar: boolean = true
-  protected actions: Action[] = ['modify', 'move', 'remove', 'complete']
+  protected actions: Action[] = ['modify', 'translate', 'remove', 'complete']
   protected drawTypes: GeomType[] = DEFAULT_GEOM_TYPES
   protected allButtons: Button[] = buttons
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
@@ -574,7 +574,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.disableDraw()
     this.disableFreehand()
     if (this.showToolBar) {
-      this.#setSelectedBtn('move', true)
+      this.#setSelectedBtn('translate', true)
     }
     if (this.#translate.value) {
       this.#translate.value.setActive(true)
@@ -597,7 +597,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   disableTranslate(id?: Id): boolean {
     this.enableMover = false
-    this.#setSelectedBtn('move', false)
+    this.#setSelectedBtn('translate', false)
     if (!this.#translate.value) return true
     this.#translate.value.setActive(false)
     return true
@@ -816,7 +816,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         } else {
           this.enableModify()
         }
-      } else if (type === 'move') {
+      } else if (type === 'translate') {
         if (this.enableMover) {
           this.disableTranslate()
         } else {
