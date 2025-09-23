@@ -13,6 +13,9 @@ body {
 
 .do {
   display: flex;
+  .operation {
+    margin: 10px 20px;
+  }
 }
 
 button {
@@ -38,27 +41,4 @@ select {
   height: 32px;
   border-radius: 4px;
   background-color: lightcyan;
-}
-
-thead tr {
-  background-color: var(--ol-subtle-foreground-color);
-  color: white;
-  font-weight: bold;
-}
-
-tr {
-  height: 36px;
-}
-
-td {
-  /*min-width: 360px;*/
-  padding: 0 16px;
-}
-/*tr:nth-child(odd) {
-  background-color: #f9f9f9;
-}*/
-
-/* 偶数行 */
-tr:nth-child(even) {
-  background-color: #e6e6e6;
 }

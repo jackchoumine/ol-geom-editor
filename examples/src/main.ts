@@ -6,6 +6,8 @@ import { fromLonLat } from 'ol/proj'
 import { OSM } from 'ol/source'
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 
+import 'highlight.js/styles/github.css'
+
 //import { GeomEditor } from '../../dist/index.js'
 //import '../../dist/geom-editor.css'
 //@ts-ignore

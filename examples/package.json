@@ -23,6 +23,7 @@
     "url": "git+https://github.com/author/library.git"
   },
   "dependencies": {
+    "highlight.js": "^11.11.1",
     "ol": "^7.5.2"
   }
 }

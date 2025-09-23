@@ -1,10 +1,12 @@
 # ol-geom-editor
 
-An elegant OpenLayers extension for editing geometric shapes.
+An elegant OpenLayers extension for editing geometric shapes. Really easy to use with elegant and intuitive api.
+
+[docs and demo](https://jackchoumine.github.io/ol-geom-editor/)
 
 ## Usage
 
-### install
+### installation
 
 > in node
 
@@ -334,13 +336,13 @@ all features will reset original status.
 
 ## events
 
-GeomEditor emit some events when interact with features.
+GeomEditor trigger some events when interact with features.
 
-> GeomEditor emit custom events and emit ol interaction event.
+> GeomEditor trigger custom events and trigger ol interaction event.
 
 > Custom events have a better name over ol, like `drawBegin` is better than `drawbegin` in ol event style name in my opinion.
 
-> all event emit soma data you can use directly and align with the original event.
+> All events includes soma data you can use directly and align with the original event.
 
 event list:
 
@@ -357,7 +359,7 @@ event list:
 | remove            | remove geometry           |
 | complete          | complete edit geometry    |
 
-> The original event will also be triggered at the time of response.
+> The original event will also be triggered during interacting.
 
 ### examples
 
@@ -383,3 +385,12 @@ geomEditor.on('complete', event => {
   console.log({ event })
 })
 ```
+
+## 🤝 Contributing
+
+Contributions are always welcome!
+Feel free to open an issue, suggest a feature, or submit a pull request.
+
+## ⭐ Support
+
+If you find this project helpful, please consider giving it a star ⭐ — it helps others discover the project and keeps us motivated! [give me a star](https://github.com/jackchoumine/ol-geom-editor)
