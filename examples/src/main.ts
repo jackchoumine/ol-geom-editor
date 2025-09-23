@@ -73,11 +73,11 @@ olDraw.on('translatestart', event => {
 olDraw.on('translateend', event => {
   console.log({ event })
 })
-olDraw.on('moveStart', event => {
+olDraw.on('translateBegin', event => {
   console.log({ event })
 })
 
-olDraw.on('moveEnd', event => {
+olDraw.on('translateComplete', event => {
   console.log({ event })
 })
 olDraw.on('modifystart', event => {

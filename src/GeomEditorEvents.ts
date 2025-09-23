@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-13 21:51:45
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-23 03:13:04
+ * @LastEditTime: 2025-09-24 01:13:32
  * @Description : olGeometryEditor 自定义事件
  */
 import { Collection, type Feature } from 'ol'
@@ -32,10 +32,10 @@ enum GeomEditorEventType {
    */
   DESELECT = 'deselect',
 
-  DRAW_COMPLETE = 'drawComplete',
   DRAW_BEGIN = 'drawBegin',
-  MOVE_START = 'moveStart',
-  MOVE_END = 'moveEnd',
+  DRAW_COMPLETE = 'drawComplete',
+  TRANSLATE_START = 'translateBegin',
+  TRANSLATE_END = 'translateComplete',
   MODIFY_BEGIN = 'modifyBegin',
   MODIFY_COMPLETE = 'modifyComplete',
   /**
