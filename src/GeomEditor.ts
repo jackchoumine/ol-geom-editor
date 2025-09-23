@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:24:40
+ * @LastEditTime: 2025-09-24 01:27:57
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -586,11 +586,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.#map?.addInteraction(this.#translate.value)
     this.#translate.value.on('translatestart', event => {
       this.dispatchEvent(event)
-      this.#emitMoveStart(event)
+      this.#emitTranslateBegin(event)
     })
     this.#translate.value.on('translateend', event => {
       this.dispatchEvent(event)
-      this.#emitMoveEnd(event)
+      this.#emitTranslateComplete(event)
     })
     return true
   }
@@ -1093,15 +1093,15 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     }
   }
 
-  #emitMoveStart(event: TranslateEvent) {
+  #emitTranslateBegin(event: TranslateEvent) {
     const { features, startCoordinate } = event
-    this.dispatchEvent(this.#createMoveEvent(features, startCoordinate))
+    this.dispatchEvent(this.#createTranslateEvent(features, startCoordinate))
   }
-  #emitMoveEnd(event: TranslateEvent) {
+  #emitTranslateComplete(event: TranslateEvent) {
     const { features, startCoordinate, coordinate } = event
-    this.dispatchEvent(this.#createMoveEvent(features, startCoordinate, coordinate))
+    this.dispatchEvent(this.#createTranslateEvent(features, startCoordinate, coordinate))
   }
-  #createMoveEvent(features: Collection<Feature<Geometry>>, startAt: Coordinate, endAt?: Coordinate) {
+  #createTranslateEvent(features: Collection<Feature<Geometry>>, startAt: Coordinate, endAt?: Coordinate) {
     const dataList = this.#convertFeaturesToData(features)
     const start = transform(startAt, this.#mapProj, 'EPSG:4326')
     const start3857 = transform(startAt, this.#mapProj, 'EPSG:3857')
