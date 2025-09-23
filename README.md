@@ -36,7 +36,7 @@ const { GeomEditor } = olGeomEditor
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
 
-## create a geomEditor instance
+## create a GeomEditor instance
 
 GeomEditor has two params:
 
