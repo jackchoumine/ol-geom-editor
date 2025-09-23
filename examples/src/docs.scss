@@ -1,14 +1,24 @@
 table {
+  border-collapse: collapse;
+
   thead tr {
+    height: 40px;
     background-color: var(--ol-subtle-foreground-color);
     color: white;
     font-weight: bold;
-  }
-  tr {
-    height: 36px;
+    font-size: 1.2rem;
+    th {
+      border-right: 1px white solid;
+    }
   }
 
   tbody {
+    tr {
+      height: 36px;
+      td {
+        border-right: 1px white solid;
+      }
+    }
     tr:nth-child(even) {
       background-color: #e6e6e6;
     }
