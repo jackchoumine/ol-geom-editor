@@ -63,6 +63,10 @@
     "type": "git",
     "url": "https://github.com/jackchoumine/ol-geom-editor.git"
   },
+  "homepage": "https://github.com/jackchoumine/ol-geom-editor#readme",
+  "bugs": {
+    "url": "https://github.com/jackchoumine/ol-geom-editor/issues"
+  },
   "keywords": [
     "ol",
     "openLayers",
