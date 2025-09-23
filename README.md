@@ -51,7 +51,7 @@ options has some props:
 | drawTypes       | Array                           | ['Point', 'LineString', 'Polygon', 'Circle'] | draw geometry types          |
 | actions         | Array                           | ['remove', 'modify', 'move', 'complete']     | operations on geometry       |
 | layerStyle      | Style \| StyleLike \| FlatStyle | openLayers default feature style             | default feature style        |
-| selectedStyle   | StyleLike                       | below                                        | feature style after style    |
+| selectedStyle   | StyleLike                       | below                                        | feature style is selected    |
 
 default selected style:
 
@@ -282,6 +282,19 @@ options is a object, props:
 geomEditor.deselect(['line1', 'p2CQqn2lFk'])
 ```
 
+### select interaction
+
+> enableSelect(options?: SelectModeOptions) -- enable select interaction
+
+options is a object, set select mode
+
+| prop   | type    | default value | optional | desc                        |
+| ------ | ------- | ------------- | -------- | --------------------------- |
+| multi  | boolean | true          | ✅       | select multiple features    |
+| single | boolean | false         | ✅       | only can select one feature |
+
+> disableSelect() -- disable select interaction
+
 ### modify geometry
 
 > enableModify(style?: StyleLike | FlatStyle) -- enable modify interaction
@@ -317,3 +330,53 @@ geomEditor.removeFeatures(['test1', 'test2']) // remove features by id array
 > completeEdit() -- complete edit
 
 all features will reset original status.
+
+## events
+
+GeomEditor emit some events when interact with features.
+
+> GeomEditor emit custom events and emit ol interaction event.
+
+> Custom events have a better name over ol, like `drawBegin` is better than `drawbegin` in ol event style name in my opinion.
+
+> all event emit soma data you can use directly and align with the original event.
+
+event list:
+
+| event          | when emit              |
+| -------------- | ---------------------- |
+| select         | select feature         |
+| deselect       | deselect feature       |
+| drawBegin      | begin draw geometry    |
+| drawComplete   | finish draw geometry   |
+| modifyBegin    | begin modify geometry  |
+| modifyComplete | finish modify geometry |
+| remove         | remove geometry        |
+| complete       | complete edit geometry |
+
+> The original event will also be triggered at the time of response.
+
+### examples
+
+```js
+// original event
+geomEditor.on('modifystart', event => {
+  console.log({ event })
+})
+// original event
+geomEditor.on('modifyend', event => {
+  console.log({ event })
+})
+geomEditor.on('modifyBegin', event => {
+  console.log({ event })
+})
+geomEditor.on('modifyComplete', event => {
+  console.log({ event })
+})
+geomEditor.on('remove', event => {
+  console.log({ event })
+})
+geomEditor.on('complete', event => {
+  console.log({ event })
+})
+```
