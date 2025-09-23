@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:40:25
+ * @LastEditTime: 2025-09-24 04:45:06
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -30,7 +30,6 @@ import type { FlatStyle } from 'ol/style/flat'
 
 import type { GeoJSON as GeoJSONT } from 'geojson'
 import { debounce } from 'petite-utils'
-import { shallowRef } from 'vue'
 
 import {
   GeomEditorCompleteEvent,
@@ -150,14 +149,14 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   readonly #view: View | null = null
   readonly #dataProj: ProjCode = 'EPSG:4326'
   readonly #mapProj: ProjCode = 'EPSG:3857'
-  #modify = shallowRef<Modify>()
-  #translate = shallowRef<Translate>()
-  #draw = shallowRef<Draw>()
+  #drawer: Draw | null = null
+  #modifier: Modify | null = null
+  #snap: Snap | null = null
+  #translator: Translate | null = null
   #drawingType: GeomType = 'None'
   #drawEndOn: EventsKey | null = null
   #drawStartOn: EventsKey | null = null
   #selectOn: EventsKey | null = null
-  #snap: Snap | null = null
 
   #boxSelectable = false
   #multiSelectable = true
@@ -310,14 +309,14 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     if (style) {
       this.sketchStyle = style
     }
-    this.#draw.value = new Draw({
+    this.#drawer = new Draw({
       source: this.#source,
       type,
       freehand: this.#canFreehand && canFreehandType.includes(type),
       style: this.sketchStyle !== null ? this.sketchStyle : undefined,
     })
-    this.#map.addInteraction(this.#draw.value)
-    this.#drawStartOn = this.#draw.value.on('drawstart', (event: DrawEvent) => {
+    this.#map.addInteraction(this.#drawer)
+    this.#drawStartOn = this.#drawer.on('drawstart', (event: DrawEvent) => {
       this.dispatchEvent(event)
       const feature = event.feature
       const geometry = feature.getGeometry() as SimpleGeometry
@@ -335,7 +334,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         new GeomEditorDrawEvent(GeomEditorEventType.DRAW_BEGIN, null, feature, startAt, allData, allFeatures),
       )
     })
-    this.#drawEndOn = this.#draw.value.on('drawend', (event: DrawEvent) => {
+    this.#drawEndOn = this.#drawer.on('drawend', (event: DrawEvent) => {
       this.dispatchEvent(event)
       const feature = event.feature
       const geometry = feature.getGeometry() as SimpleGeometry
@@ -405,7 +404,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   disableDraw() {
-    if (!this.#map || !this.#draw.value) return
+    if (!this.#map || !this.#drawer) return
     this.#drawingType = 'None'
     this.disableSnap()
     if (this.showToolBar) {
@@ -415,8 +414,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       // 支持自由绘制
       this.#enableBtn('freehand', true, `enable freehand draw.`)
     }
-    this.#map.removeInteraction(this.#draw.value)
-    this.#draw.value = undefined
+    this.#map.removeInteraction(this.#drawer)
+    this.#drawer = undefined
     unByKey(this.#drawEndOn!)
     unByKey(this.#drawStartOn!)
   }
@@ -576,19 +575,19 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     if (this.showToolBar) {
       this.#setSelectedBtn('translate', true)
     }
-    if (this.#translate.value) {
-      this.#translate.value.setActive(true)
+    if (this.#translator) {
+      this.#translator.setActive(true)
       return true
     }
-    this.#translate.value = new Translate({
+    this.#translator = new Translate({
       features: this.#selected,
     })
-    this.#map?.addInteraction(this.#translate.value)
-    this.#translate.value.on('translatestart', event => {
+    this.#map?.addInteraction(this.#translator)
+    this.#translator.on('translatestart', event => {
       this.dispatchEvent(event)
       this.#emitTranslateBegin(event)
     })
-    this.#translate.value.on('translateend', event => {
+    this.#translator.on('translateend', event => {
       this.dispatchEvent(event)
       this.#emitTranslateComplete(event)
     })
@@ -598,8 +597,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   disableTranslate(id?: Id): boolean {
     this.enableMover = false
     this.#setSelectedBtn('translate', false)
-    if (!this.#translate.value) return true
-    this.#translate.value.setActive(false)
+    if (!this.#translator) return true
+    this.#translator.setActive(false)
     return true
   }
 
@@ -625,26 +624,26 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     if (this.showToolBar) {
       this.#setSelectedBtn('modify', true)
     }
-    if (this.#modify.value) {
-      this.#modify.value.setActive(true)
+    if (this.#modifier) {
+      this.#modifier.setActive(true)
       this.enableSnap()
       return
     }
     if (style !== null) {
       this.modifyingStyle = style
     }
-    this.#modify.value = new Modify({
+    this.#modifier = new Modify({
       features: this.#selected,
       style: this.modifyingStyle !== null ? this.modifyingStyle : undefined,
     })
-    this.#map?.addInteraction(this.#modify.value)
-    this.#modify.value.on('modifystart', event => {
+    this.#map?.addInteraction(this.#modifier)
+    this.#modifier.on('modifystart', event => {
       this.dispatchEvent(event)
       const dataList = this.#convertFeaturesToData(event.features)
       const _event = new GeomEditorModifyEvent(GeomEditorEventType.MODIFY_BEGIN, dataList, event.features)
       this.dispatchEvent(_event)
     })
-    this.#modify.value.on('modifyend', event => {
+    this.#modifier.on('modifyend', event => {
       this.dispatchEvent(event)
       const dataList = this.#convertFeaturesToData(event.features)
       const _event = new GeomEditorModifyEvent(GeomEditorEventType.MODIFY_COMPLETE, dataList, event.features)
@@ -659,8 +658,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     if (this.showToolBar) {
       this.#setSelectedBtn('modify', false)
     }
-    if (!this.#modify.value) return true
-    this.#modify.value.setActive(false)
+    if (!this.#modifier) return true
+    this.#modifier.setActive(false)
     return true
   }
 
