@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:27:57
+ * @LastEditTime: 2025-09-24 01:29:43
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -48,8 +48,8 @@ import {
   type ElementOf,
   type FeatureOptions,
   type FitOptions,
-  type GeoType,
   type GeomEditorI,
+  type GeomType,
   type GeometryData,
   type GeometryGeoJSON,
   type GeometryWKT,
@@ -64,7 +64,7 @@ import { genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } f
 //import type { GeometryFunction } from 'ol/style/Style'
 const DEFAULT_ACTIONS = ['remove', 'modify', 'move', 'complete'] as const
 
-const DEFAULT_GEOM_TYPES: GeoType[] = ['Point', 'LineString', 'Polygon', 'Circle']
+const DEFAULT_GEOM_TYPES: GeomType[] = ['Point', 'LineString', 'Polygon', 'Circle']
 // type ElementOf<T extends readonly unknown[]> = T[number]
 
 type Action = (typeof DEFAULT_ACTIONS)[number]
@@ -83,7 +83,7 @@ type GeomEditorOptions = {
    *
    * 默认 ['Point', 'LineString', 'Polygon', 'Circle']
    */
-  drawTypes?: GeoType[]
+  drawTypes?: GeomType[]
   /**
    * 是否支持自由绘制。默认支持
    *
@@ -131,7 +131,7 @@ const defaultFit: FitOptions = {
   maxZoom: 14,
   padding: 100,
 }
-const canFreehandType: GeoType[] = ['LineString', 'Polygon'] as const
+const canFreehandType: GeomType[] = ['LineString', 'Polygon'] as const
 
 // 绘制图层的 zIndex 设置为一个很大的值（超过9亿），确保在最上层显示
 const zIndex = +Math.floor(Number.MAX_SAFE_INTEGER / 1000_0000)
@@ -153,7 +153,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #modify = shallowRef<Modify>()
   #translate = shallowRef<Translate>()
   #draw = shallowRef<Draw>()
-  #drawingType: GeoType = 'None'
+  #drawingType: GeomType = 'None'
   #drawEndOn: EventsKey | null = null
   #drawStartOn: EventsKey | null = null
   #selectOn: EventsKey | null = null
@@ -167,7 +167,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   protected supportFreehand: boolean = true
   protected showToolBar: boolean = true
   protected actions: Action[] = ['modify', 'move', 'remove', 'complete']
-  protected drawTypes: GeoType[] = DEFAULT_GEOM_TYPES
+  protected drawTypes: GeomType[] = DEFAULT_GEOM_TYPES
   protected allButtons: Button[] = buttons
   protected sketchStyle: Style | StyleLike | FlatStyle | null = null
   protected selectedStyle: StyleLike = highlightStyle
@@ -288,7 +288,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     return false
   }
 
-  enableDraw(type: GeoType, style?: Style | StyleLike | FlatStyle): void {
+  enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle): void {
     if (!this.#map) return
     // 只能同时启用一种绘制类型，先禁用之前的绘制
     this.disableDraw()
@@ -796,12 +796,12 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const btn = target.closest('button')
       if (!btn) return
       const type = btn.dataset.type as string
-      if (this.drawTypes.includes(type as GeoType)) {
+      if (this.drawTypes.includes(type as GeomType)) {
         if (this.#drawingType === type) {
           // 开启选择
           this.enableSelect()
         } else {
-          this.enableDraw(type as GeoType)
+          this.enableDraw(type as GeomType)
         }
       } else if (type === 'freehand') {
         // 开启自由绘制
@@ -853,7 +853,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.drawTypes = options.drawTypes
     }
     // 几何类型
-    const _types = buttons.filter(btn => this.drawTypes.includes(btn.type as GeoType))
+    const _types = buttons.filter(btn => this.drawTypes.includes(btn.type as GeomType))
     // 是否支持自由绘制
     if (this.supportFreehand) {
       _types.push(buttons.find(btn => btn.name === 'freehand')!)

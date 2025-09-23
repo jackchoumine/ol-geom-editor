@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-21 22:05:09
+ * @LastEditTime: 2025-09-24 01:30:11
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -17,7 +17,7 @@ import type { GeoJSON } from 'geojson'
 
 export type ProjCode = `EPSG:${number}`
 
-export type GeoType = 'Point' | 'LineString' | 'Polygon' | 'Circle' | 'None'
+export type GeomType = 'Point' | 'LineString' | 'Polygon' | 'Circle' | 'None'
 
 type FeatureId = number | string
 
