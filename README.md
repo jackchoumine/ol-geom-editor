@@ -87,6 +87,7 @@ const selectedStyle = new Style({
 | disableSelect      | disable select interaction               |
 | enableModify       | enable modify interaction                |
 | disableModify      | disable modify interaction               |
+| disableModify      | disable modify interaction               |
 | enableTranslate    | enable translate interaction             |
 | disableTranslate   | disable translate interaction            |
 | removeFeatures     | remove features                          |
@@ -343,16 +344,18 @@ GeomEditor emit some events when interact with features.
 
 event list:
 
-| event          | when emit              |
-| -------------- | ---------------------- |
-| select         | select feature         |
-| deselect       | deselect feature       |
-| drawBegin      | begin draw geometry    |
-| drawComplete   | finish draw geometry   |
-| modifyBegin    | begin modify geometry  |
-| modifyComplete | finish modify geometry |
-| remove         | remove geometry        |
-| complete       | complete edit geometry |
+| event             | when emit                 |
+| ----------------- | ------------------------- |
+| select            | select feature            |
+| deselect          | deselect feature          |
+| drawBegin         | begin draw geometry       |
+| drawComplete      | finish draw geometry      |
+| modifyBegin       | begin modify geometry     |
+| modifyComplete    | finish modify geometry    |
+| translateBegin    | begin translate geometry  |
+| translateComplete | finish translate geometry |
+| remove            | remove geometry           |
+| complete          | complete edit geometry    |
 
 > The original event will also be triggered at the time of response.
 
