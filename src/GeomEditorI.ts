@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:30:11
+ * @LastEditTime: 2025-09-24 01:34:31
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -200,7 +200,7 @@ export abstract class GeomEditorI {
    * @param type 几何类型
    * @param style 绘制的时的样式，会传递给 Draw 的 style 参数
    */
-  abstract enableDraw(type: GeoType, style?: Style | StyleLike | FlatStyle): void
+  abstract enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle): void
 
   /**
    * 禁用绘制
@@ -300,7 +300,7 @@ export abstract class GeomEditorI {
 
 export type Button = {
   name: string
-  type: GeoType | string
+  type: GeomType | string
   title: string
   icon: (color: string) => string
 }
