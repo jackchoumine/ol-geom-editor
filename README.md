@@ -46,14 +46,14 @@ const geomEditor = new GeomEditor(olMapInstance, options)
 
 options has some props:
 
-| prop            | type                            | default                                      | desc                         |
-| --------------- | ------------------------------- | -------------------------------------------- | ---------------------------- |
-| showToolBar     | boolean                         | true                                         | render tool bar or not       |
-| supportFreehand | boolean                         | true                                         | support freehand draw or not |
-| drawTypes       | Array                           | ['Point', 'LineString', 'Polygon', 'Circle'] | draw geometry types          |
-| actions         | Array                           | ['remove', 'modify', 'move', 'complete']     | operations on geometry       |
-| layerStyle      | Style \| StyleLike \| FlatStyle | openLayers default feature style             | default feature style        |
-| selectedStyle   | StyleLike                       | below                                        | feature style is selected    |
+| prop            | type                            | default                                       | desc                         |
+| --------------- | ------------------------------- | --------------------------------------------- | ---------------------------- |
+| showToolBar     | boolean                         | true                                          | render tool bar or not       |
+| supportFreehand | boolean                         | true                                          | support freehand draw or not |
+| drawTypes       | Array                           | ['Point', 'LineString', 'Polygon', 'Circle']  | draw geometry types          |
+| actions         | Array                           | ['remove', 'modify', 'translate', 'complete'] | operations on geometry       |
+| layerStyle      | Style \| StyleLike \| FlatStyle | openLayers default feature style              | default feature style        |
+| selectedStyle   | StyleLike                       | below                                         | feature style is selected    |
 
 default selected style:
 
@@ -314,9 +314,9 @@ options is a object, set select mode
 
 > removeFeatures(id?: Id | Id[]) - remove features
 
-| param | type               | default value | optional | desc       |
-| ----- | ------------------ | ------------- | -------- | ---------- |
-| id    | string \| string[] |               | ✅       | feature id |
+| param | type               | default | optional | desc       |
+| ----- | ------------------ | ------- | -------- | ---------- |
+| id    | string \| string[] |         | ✅       | feature id |
 
 if don't pass id, will remove all selected features.
 
