@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-13 21:51:45
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:13:32
+ * @LastEditTime: 2025-09-24 01:24:10
  * @Description : olGeometryEditor 自定义事件
  */
 import { Collection, type Feature } from 'ol'
@@ -131,7 +131,7 @@ class GeomEditorDrawEvent extends BaseEvent {
   }
 }
 
-class GeomEditorMoveEvent extends TranslateEvent {
+class GeomEditorTranslateEvent extends TranslateEvent {
   dataArray
   startAt
   endAt
@@ -188,7 +188,7 @@ export {
   GeomEditorRemoveEvent,
   GeomEditorCompleteEvent,
   GeomEditorDrawEvent,
-  GeomEditorMoveEvent,
+  GeomEditorTranslateEvent,
   GeomEditorModifyEvent,
   type GeomEditorEventMap,
 }

@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:12:27
+ * @LastEditTime: 2025-09-24 01:24:40
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -38,9 +38,9 @@ import {
   GeomEditorDrawEvent,
   GeomEditorEventType,
   GeomEditorModifyEvent,
-  GeomEditorMoveEvent,
   GeomEditorRemoveEvent,
   GeomEditorSelectEvent,
+  GeomEditorTranslateEvent,
 } from './GeomEditorEvents'
 import {
   type Button,
@@ -1117,9 +1117,15 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         coord: end,
         coord3857: end3857,
       }
-      return new GeomEditorMoveEvent(GeomEditorEventType.TRANSLATE_END, dataList, features, _startAt, _endAt)
+      return new GeomEditorTranslateEvent(
+        GeomEditorEventType.TRANSLATE_END,
+        dataList,
+        features,
+        _startAt,
+        _endAt,
+      )
     }
-    return new GeomEditorMoveEvent(GeomEditorEventType.TRANSLATE_START, dataList, features, _startAt)
+    return new GeomEditorTranslateEvent(GeomEditorEventType.TRANSLATE_START, dataList, features, _startAt)
   }
   #geneClassName(options: GeomEditorOptions) {
     const { className = 'ol-layer' } = options
