@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-25 00:36:10
+ * @LastEditTime: 2025-09-25 02:06:26
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -56,7 +56,20 @@ import {
   type SelectOptions,
   buttons,
 } from './GeomEditorI'
-import { debounce, genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } from './utils'
+import {
+  angularDistanceDeg,
+  angularDistanceDeg_haversine,
+  debounce,
+  distanceMetersToDegrees,
+  genId,
+  getWKTType,
+  isGeoJSON,
+  isGeoJSONObj,
+  isWKT,
+  normalizePadding,
+} from './utils'
+
+const earth_radius = 6371008.8 as const
 
 //import type { GeometryFunction } from 'ol/style/Style'
 const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
@@ -270,10 +283,14 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       if (isCircle && type === 'Polygon') {
         const center = props.center
         const radius = props.radius
-        if (Array.isArray(center) && radius != null) {
+        const r = props.r
+        if (Array.isArray(center) && radius != null && r != null) {
           const center3857 = fromLonLat(center)
           const is3857 = this.#mapProj.endsWith('3857')
-          const circle = new Feature(new Circle(is3857 ? center3857 : center, radius))
+          const c = is3857 ? center3857 : center
+          // FIXME r 单位 度， 4326 小偏小
+          const r_ = is3857 ? radius : r
+          const circle = new Feature(new Circle(c, r_))
           circle.setId(id ?? genId('circle'))
           this.#source.addFeature(circle)
         }
@@ -1052,16 +1069,19 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #convertCircleToData(feature: Feature<Circle>): GeometryData {
     const circle = feature.getGeometry() as Circle
     const flatCoords = circle.getFlatCoordinates()
-    //const r = circle.getRadius()
     const center = transform(circle.getCenter(), this.#mapProj, 'EPSG:4326')
     const c1 = transform([flatCoords[2], flatCoords[3]], this.#mapProj, 'EPSG:4326')
-    const radius = getDistance(center, c1)
+    const radius = getDistance(center, c1) // 米
+    const r = angularDistanceDeg(center, c1) // 度
+    //const r = distanceMetersToDegrees(radius, earth_radius)
+    //const r = distanceMetersToDegrees(radius, earth_radius)
     const center3857 = fromLonLat(center)
     const properties = {
       geometryType: 'circle',
       center,
       radius,
       center3857,
+      r,
     }
 
     const polygon = circular(center, radius, 128)
