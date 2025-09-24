@@ -393,6 +393,8 @@ geomEditor.on('complete', event => {
 })
 ```
 
+Open the console panel on this page, operate the demo, and check the events.
+
 ## 🤝 Contributing
 
 Contributions are always welcome!
