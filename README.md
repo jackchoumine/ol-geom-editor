@@ -20,7 +20,7 @@ then
 
 ```js
 import { GeomEditor } from 'ol-geom-editor'
-// if you don not need to use toolbar, no need import style
+// import style if need show tool bar
 import 'ol-geom-editor/index.css'
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
@@ -29,6 +29,8 @@ const geomEditor = new GeomEditor(olMap) // pass ol map instance
 > in browser
 
 ```html
+<!-- import style if need show tool bar -->
+<link href="https://unpkg.com/ol-geom-editor/dist/index.css" rel="stylesheet" />
 <script src="https://unpkg.com/ol-geom-editor"></script>
 ```
 
@@ -39,6 +41,8 @@ const { GeomEditor } = window.olGeomEditor
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
+
+`ol-geom-editor` depends on ol， you should import ol firstly!
 
 ## create a GeomEditor instance
 
