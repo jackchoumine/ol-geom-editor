@@ -38,7 +38,7 @@ const geomEditor = new GeomEditor(olMap) // pass ol map instance
 
 ## create a GeomEditor instance
 
-GeomEditor has two params:
+GeomEditor constructor has two params，the second is optional object.
 
 ```js
 const geomEditor = new GeomEditor(olMapInstance, options)
@@ -98,9 +98,9 @@ const selectedStyle = new Style({
 
 You can add feature by WKT or GeoJSON.
 
-> addFeatureFromWKT(wkt:string, id?:string, dataProjection?:string | FeatureOptions)
+> `addFeatureFromWKT(wkt:string, id?:string, dataProjection?:string | FeatureOptions)`
 
-| param          | type                     | default value | optional | desc            |
+| param          | type                     | default       | optional | desc            |
 | -------------- | ------------------------ | ------------- | -------- | --------------- |
 | wkt            | string                   |               | required | WKT             |
 | id             | string \| number         | random string | ✅       | id of feature   |
@@ -108,13 +108,13 @@ You can add feature by WKT or GeoJSON.
 
 FeatureOptions is a Object :
 
-| prop              | type      | default value            | optional | desc            |
+| prop              | type      | default                  | optional | desc            |
 | ----------------- | --------- | ------------------------ | -------- | --------------- |
 | dataProjection    | string    | 'EPSG:4326'              | ✅       | EPSG projection |
 | featureProjection | string    | 'EPSG:3857'              | ✅       | map projection  |
 | style             | StyleLike | default ol feature style | ✅       | feature style   |
 
-> addFeatureFromJSON(JSON:string | geoJSONObj, dataProjection?:string | FeatureOptions)
+> `addFeatureFromJSON(JSON:string | geoJSONObj, dataProjection?:string | FeatureOptions)`
 
 #### examples
 
@@ -186,41 +186,41 @@ geomEditor.addFeatureFromJSON(circle, { featureProjection: 'EPSG:3857' })
 
 ### draw geometry
 
-> enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle)
+> `enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle)`
 
-| param | type                            | default value           | optional | desc               |
+| param | type                            | default                 | optional | desc               |
 | ----- | ------------------------------- | ----------------------- | -------- | ------------------ |
 | type  | string                          |                         | required | draw geometry type |
 | style | Style \| StyleLike \| FlatStyle | ol default sketch style | ✅       | sketch style       |
 
 type pass `None` to draw nothing.
 
-> disableDraw() -- disable draw interaction.
+> `disableDraw()` -- disable draw interaction.
 
-> enableFreehand() -- enable freehand draw interaction.
+> `enableFreehand()` -- enable freehand draw interaction.
 
-> disableFreehand() -- disable freehand draw interaction.
+> `disableFreehand()` -- disable freehand draw interaction.
 
 ### select feature
 
-> select(id: Id | Id[], options?: SelectOptions): Feature[]
+> `select(id: Id | Id[], options?: SelectOptions): Feature[]`
 
 select some features.
 
-| param   | type                 | default value | optional | desc       |
-| ------- | -------------------- | ------------- | -------- | ---------- |
-| id      | string \| string[]   |               | required | feature id |
-| options | SelectOptions Object | below         | ✅       |            |
+| param   | type                 | default | optional | desc       |
+| ------- | -------------------- | ------- | -------- | ---------- |
+| id      | string \| string[]   |         | required | feature id |
+| options | SelectOptions Object | below   | ✅       |            |
 
 <!-- options should support boolean -->
 
 options is a object , props :
 
-| prop          | type                             | default value | optional | desc                         |
-| ------------- | -------------------------------- | ------------- | -------- | ---------------------------- |
-| selectedStyle | Style \| StyleLike \| FlatStyle  | below         | ✅       | selected style               |
-| eachFeature   | function                         |               | ✅       | traverse features            |
-| fit           | boolean \| viewFitOptions Object | true          | ✅       | fit selected feature to view |
+| prop          | type                             | default | optional | desc                         |
+| ------------- | -------------------------------- | ------- | -------- | ---------------------------- |
+| selectedStyle | Style \| StyleLike \| FlatStyle  | below   | ✅       | selected style               |
+| eachFeature   | function                         |         | ✅       | traverse features            |
+| fit           | boolean \| viewFitOptions Object | true    | ✅       | fit selected feature to view |
 
 default selected style:
 
@@ -272,14 +272,14 @@ const features = geomEditor.select(['line1', 'p2CQqn2lFk'], {
 
 ### deselect feature
 
-> deselect(id: Id | Id[], options?: DeselectOptions)
+> `deselect(id: Id | Id[], options?: DeselectOptions)`
 
 options is a object, props:
 
-| prop            | type                            | default value | optional | desc              |
-| --------------- | ------------------------------- | ------------- | -------- | ----------------- |
-| deselectedStyle | Style \| StyleLike \| FlatStyle |               | ✅       | deselected style  |
-| eachFeature     | function                        |               | ✅       | traverse features |
+| prop            | type                            | default | optional | desc              |
+| --------------- | ------------------------------- | ------- | -------- | ----------------- |
+| deselectedStyle | Style \| StyleLike \| FlatStyle |         | ✅       | deselected style  |
+| eachFeature     | function                        |         | ✅       | traverse features |
 
 ### examples
 
@@ -289,32 +289,34 @@ geomEditor.deselect(['line1', 'p2CQqn2lFk'])
 
 ### select interaction
 
-> enableSelect(options?: SelectModeOptions) -- enable select interaction
+> `enableSelect(options?: SelectModeOptions)` -- enable select interaction
 
 options is a object, set select mode
 
-| prop   | type    | default value | optional | desc                        |
-| ------ | ------- | ------------- | -------- | --------------------------- |
-| multi  | boolean | true          | ✅       | select multiple features    |
-| single | boolean | false         | ✅       | only can select one feature |
+| prop   | type    | default | optional | desc                        |
+| ------ | ------- | ------- | -------- | --------------------------- |
+| multi  | boolean | true    | ✅       | select multiple features    |
+| single | boolean | false   | ✅       | only can select one feature |
 
-> disableSelect() -- disable select interaction
+translate interaction support multi mode default, modify interaction support single mode only.
+
+> `disableSelect()` -- disable select interaction
 
 ### modify geometry
 
-> enableModify(style?: StyleLike | FlatStyle) -- enable modify interaction
+> `enableModify(style?: StyleLike | FlatStyle)` -- enable modify interaction
 
-> disableModify() -- disable modify interaction
+> `disableModify()` -- disable modify interaction
 
 ### translate geometry
 
-> enableTranslate() -- enable translate interaction
+> `enableTranslate()` -- enable translate interaction
 
-> disableTranslate() -- disable translate interaction
+> `disableTranslate()` -- disable translate interaction
 
 ### remove geometry
 
-> removeFeatures(id?: Id | Id[]) - remove features
+> `removeFeatures(id?: Id | Id[])` - remove features
 
 | param | type               | default | optional | desc       |
 | ----- | ------------------ | ------- | -------- | ---------- |
@@ -332,7 +334,7 @@ geomEditor.removeFeatures(['test1', 'test2']) // remove features by id array
 
 ### complete editor
 
-> completeEdit() -- complete edit
+> `completeEdit()` -- complete edit
 
 all features will reset original status.
 
@@ -363,9 +365,9 @@ event list:
 
 > The original event will also be triggered during interacting.
 
-> Recommand use GeomEditor events, because it has converted feature to WKT and GeoJSON and include data in original event. More convenient！
+> Recommend use GeomEditor events, because it has converted feature to WKT and GeoJSON and include data in original event. More convenient！
 
-### examples
+#### examples
 
 ```js
 // original event
@@ -376,7 +378,7 @@ geomEditor.on('modifystart', event => {
 geomEditor.on('modifyend', event => {
   console.log({ event })
 })
-// NOTE GeomEditor event, you can get data includes original event
+// NOTE GeomEditor event, you can get data including original event
 geomEditor.on('modifyBegin', event => {
   console.log({ event })
 })

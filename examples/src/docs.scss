@@ -57,23 +57,27 @@ table {
   }
   h3,
   h4 {
-    background-color: #101828;
+    background-color: #415462;
     min-height: 48px;
     color: white;
     margin: 10px 0;
     padding: 0 10px;
     border-radius: 4px;
   }
-  h4,
   h3 {
     min-height: 44px;
+    line-height: 44px;
     font-size: 1.5rem;
+  }
+  h4 {
+    min-height: 36px;
+    line-height: 36px;
+    font-size: 1.14rem;
   }
   blockquote {
     background: #efefef;
     padding: 1px 16px;
-    margin-left: 0;
-    margin-right: 0;
+    margin: 8px 0;
     border-left: #cecece solid 10px;
     border-radius: 3px;
     p {
@@ -83,7 +87,10 @@ table {
     }
   }
   pre {
-    border: #bbc6ce solid 1px;
     margin: 6px 0;
+    font-size: 14px;
+    code {
+      background: #f6f8fa;
+    }
   }
 }
