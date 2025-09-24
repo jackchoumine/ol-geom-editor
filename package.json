@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsdown && npm run build:sass",
-    "build:sass": "sass ./src/geom-editor.scss  dist/geom-editor.css --style=compressed --no-source-map",
+    "build:sass": "sass ./src/geom-editor.scss  dist/index.css --style=compressed --no-source-map",
     "dev": "tsdown --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit",

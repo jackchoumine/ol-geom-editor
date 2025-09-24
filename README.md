@@ -18,6 +18,8 @@ then
 
 ```js
 import { GeomEditor } from 'ol-geom-editor'
+// if you don not need to use toolbar, no need import style
+import 'ol-geom-editor/index.css'
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
