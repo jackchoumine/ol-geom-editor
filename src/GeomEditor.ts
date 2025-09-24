@@ -2,12 +2,12 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 04:45:06
+ * @LastEditTime: 2025-09-25 00:05:29
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
-import Collection, { CollectionEvent } from 'ol/Collection'
-import Feature from 'ol/Feature'
+import { Feature } from 'ol'
+import Collection, { type CollectionEvent } from 'ol/Collection'
 import BaseObject from 'ol/Object'
 import { unByKey } from 'ol/Observable'
 import type { Coordinate } from 'ol/coordinate'
@@ -23,13 +23,11 @@ import VectorLayer from 'ol/layer/Vector'
 import { fromLonLat, toLonLat, transform } from 'ol/proj'
 import VectorSource from 'ol/source/Vector'
 import { getDistance } from 'ol/sphere'
-import { Fill, Stroke, Style } from 'ol/style'
-import CircleStyle from 'ol/style/Circle'
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 import type { StyleLike } from 'ol/style/Style'
 import type { FlatStyle } from 'ol/style/flat'
 
 import type { GeoJSON as GeoJSONT } from 'geojson'
-import { debounce } from 'petite-utils'
 
 import {
   GeomEditorCompleteEvent,
@@ -58,7 +56,7 @@ import {
   type SelectOptions,
   buttons,
 } from './GeomEditorI'
-import { genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } from './utils'
+import { debounce, genId, getWKTType, isGeoJSON, isGeoJSONObj, isWKT, normalizePadding } from './utils'
 
 //import type { GeometryFunction } from 'ol/style/Style'
 const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const

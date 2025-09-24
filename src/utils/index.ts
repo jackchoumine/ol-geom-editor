@@ -21,3 +21,23 @@ export { genId }
 function genId(type: GeomType | string = '') {
   return type.toLowerCase() + '_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
 }
+
+/**
+ * @group 工具函数
+ * @param fn function need to debounce
+ * @param wait debounce time default 200ms
+ * @param immediate if true, execute immediately when trigger, default false
+ * @returns
+ */
+export function debounce(fn: Function, wait = 200, immediate = false) {
+  let timer: ReturnType<typeof setTimeout>
+  return (...rest: unknown[]) => {
+    immediate && !timer && fn(...rest)
+    if (timer) {
+      clearTimeout(timer)
+    }
+    timer = setTimeout(() => {
+      fn(...rest)
+    }, wait)
+  }
+}
