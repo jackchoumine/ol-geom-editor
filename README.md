@@ -17,7 +17,7 @@ npm i ol-geom-editor
 then
 
 ```js
-import { GeomEditor } from olGeomEditor
+import { GeomEditor } from 'ol-geom-editor'
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
@@ -31,7 +31,7 @@ const geomEditor = new GeomEditor(olMap) // pass ol map instance
 then
 
 ```js
-const { GeomEditor } = olGeomEditor
+const { GeomEditor } = window.olGeomEditor
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
@@ -88,7 +88,6 @@ const selectedStyle = new Style({
 | enableSelect       | enable select interaction                |
 | disableSelect      | disable select interaction               |
 | enableModify       | enable modify interaction                |
-| disableModify      | disable modify interaction               |
 | disableModify      | disable modify interaction               |
 | enableTranslate    | enable translate interaction             |
 | disableTranslate   | disable translate interaction            |
@@ -211,6 +210,8 @@ select some features.
 | ------- | -------------------- | ------------- | -------- | ---------- |
 | id      | string \| string[]   |               | required | feature id |
 | options | SelectOptions Object | below         | ✅       |            |
+
+<!-- options should support boolean -->
 
 options is a object , props :
 
@@ -361,6 +362,8 @@ event list:
 
 > The original event will also be triggered during interacting.
 
+> Recommand use GeomEditor events, because it has converted feature to WKT and GeoJSON and include data in original event. More convenient！
+
 ### examples
 
 ```js
@@ -372,6 +375,7 @@ geomEditor.on('modifystart', event => {
 geomEditor.on('modifyend', event => {
   console.log({ event })
 })
+// NOTE GeomEditor event, you can get data includes original event
 geomEditor.on('modifyBegin', event => {
   console.log({ event })
 })
