@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-24 04:27:04
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-25 00:09:27
+ * @LastEditTime: 2025-09-25 00:14:55
  * @Description :
 -->
 <!doctype html>
@@ -53,11 +53,10 @@
         }),
       })
       const { GeomEditor } = window.olGeomEditor
-      console.log({
-        GeomEditor,
-      })
       const geomEditor = new GeomEditor(map)
-      //  const geomEditor = new GeomEditor(olMap) // pass ol map instance
+      geomEditor.on('drawComplete', event => {
+        console.log({ event })
+      })
     </script>
   </body>
 </html>
