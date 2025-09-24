@@ -96,6 +96,7 @@ const selectedStyle = new Style({
 | enableTranslate    | enable translate interaction             |
 | disableTranslate   | disable translate interaction            |
 | removeFeatures     | remove features                          |
+| removeAllFeatures  | remove all features                      |
 | completeEdit       | complete edit                            |
 
 ### add features
@@ -328,12 +329,17 @@ translate interaction support multi mode default, modify interaction support sin
 
 if don't pass id, will remove all selected features.
 
+> `removeAllFeatures():Promise<boolean>` -- remove all features
+
 #### examples
 
 ```ts
 geomEditor.removeFeatures() // remove all selected features
 geomEditor.removeFeatures('test') // remove one feature by id
 geomEditor.removeFeatures(['test1', 'test2']) // remove features by id array
+geomEditor.removeAllFeatures().then(success => {
+  console.log({ success })
+})
 ```
 
 ### complete editor

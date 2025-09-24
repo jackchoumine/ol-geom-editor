@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-08-06 23:06:40
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 02:24:56
+ * @LastEditTime: 2025-09-24 22:15:33
  * @Description : test html
 -->
 <!doctype html>
@@ -17,15 +17,15 @@
     <div id="ol-geom-editor-map"></div>
     <div class="do">
       <div class="operation">
-        <h3>添加要素</h3>
-        <h4>从 WKT 或者 JSON 添加</h4>
+        <h3>add feature</h3>
+        <h4>from WKT or GeoJSON</h4>
         <div>
-          <button id="add-wkt">添加 WKT</button>
-          <button id="add-JSON">添加 JSON</button>
-          <button id="add-JSONObj">添加 JSONObj</button>
+          <button id="add-wkt">add WKT</button>
+          <button id="add-JSON">add JSON</button>
+          <button id="add-JSONObj">add JSONObj</button>
         </div>
 
-        <h4>手动绘制添加</h4>
+        <h4>draw geometry</h4>
         <div class="draw">
           <select name="type" id="select-type">
             <option value="None">None</option>
@@ -39,36 +39,36 @@
             <!--<option value="LinearRing">LinearRing</option>-->
           </select>
           <label for="freehand" id="freehand-box" title="仅线和面支持自由绘制">
-            <span>自由绘制</span>
+            <span>freehand</span>
             <input type="checkbox" name="freehand" id="freehand" disabled />
           </label>
         </div>
       </div>
       <div class="operation">
-        <h3>查询要素</h3>
+        <h3>query features</h3>
         <div>
-          <button id="select-features">选中要素</button>
-          <button id="deselect-features">取消选中</button>
-          <button id="disable-select">禁用选择</button>
-          <button id="enable-select">启用多选</button>
-          <button id="enable-select-single">启用单选</button>
+          <button id="select-features">select features</button>
+          <button id="deselect-features">deselect features</button>
+          <button id="disable-select">disableSelect</button>
+          <button id="enable-select">enable select multiple</button>
+          <button id="enable-select-single">enable select single</button>
         </div>
       </div>
       <div class="operation">
-        <h3>编辑要素</h3>
+        <h3>modify feature</h3>
         <div>
-          <button id="enable-modify">启用编辑</button>
-          <button id="disable-modify">禁用编辑</button>
-          <button id="translate-features">启用平移</button>
-          <button id="disable-translate">禁用平移</button>
+          <button id="enable-modify">enableModify</button>
+          <button id="disable-modify">disableModify</button>
+          <button id="translate-features">enableTranslate</button>
+          <button id="disable-translate">disableTranslate</button>
         </div>
       </div>
       <div class="operation">
-        <h3>删除要素</h3>
+        <h3>remove feature</h3>
         <div>
-          <button id="remove-feature">删除要素</button>
-          <button id="remove-selected-features">删除选中的要素</button>
-          <button id="remove-all-features">删除所有</button>
+          <button id="remove-feature">remove feature</button>
+          <button id="remove-selected-features">remove selected</button>
+          <button id="remove-all-features">remove all</button>
         </div>
       </div>
     </div>
