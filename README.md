@@ -4,6 +4,8 @@ An elegant OpenLayers extension for editing geometric shapes. Really easy to use
 
 [docs and demo](https://jackchoumine.github.io/ol-geom-editor/)
 
+[code in github. If helpful, give me a star!](https://github.com/jackchoumine/ol-geom-editor.git)
+
 ## Usage
 
 ### installation
