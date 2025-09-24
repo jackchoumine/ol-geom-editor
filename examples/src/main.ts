@@ -164,7 +164,7 @@ const fillColor = 'rgba(218,228,194,0.5)'
 const strokeColor = 'rgba(255, 204, 51, 0.9)'
 
 function onSelect() {
-  const features = olDraw.select(['line1', 'p2CQqn2lFk'], {
+  const features = olDraw.select(['circle'], {
     selectedStyle: new Style({
       fill: new Fill({
         color: fillColor,
