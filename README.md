@@ -285,7 +285,7 @@ options is a object, props:
 | deselectedStyle | Style \| StyleLike \| FlatStyle |         | ✅       | deselected style  |
 | eachFeature     | function                        |         | ✅       | traverse features |
 
-### examples
+#### examples
 
 ```ts
 geomEditor.deselect(['line1', 'p2CQqn2lFk'])
