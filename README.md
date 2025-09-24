@@ -198,6 +198,7 @@ type pass `None` to draw nothing.
 > disableDraw() -- disable draw interaction.
 
 > enableFreehand() -- enable freehand draw interaction.
+
 > disableFreehand() -- disable freehand draw interaction.
 
 ### select feature
