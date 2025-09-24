@@ -36,8 +36,9 @@ const map = new Map({
   ],
   // interactions: ,
   view: new View({
-    center: guiYang3857, // Initial center (longitude, latitude)
+    center: guiYang, //3857, // Initial center (longitude, latitude)
     zoom: 10, // Initial zoom level
+    projection: 'EPSG:4326',
   }),
 })
 

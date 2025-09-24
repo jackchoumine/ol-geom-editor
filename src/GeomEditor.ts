@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-25 00:05:29
+ * @LastEditTime: 2025-09-25 00:36:10
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -320,7 +320,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const geometry = feature.getGeometry() as SimpleGeometry
       const flatCoords = geometry.getFlatCoordinates()
       const [lon, lat] = flatCoords
-      const start = toLonLat([lon, lat])
+      const start = transform([lon, lat], this.#mapProj, 'EPSG:4326')
       const start3857 = fromLonLat(start)
       const allFeatures = this.#source.getFeatures()
       const allData = this.#convertFeaturesToData(allFeatures)
@@ -338,13 +338,13 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const geometry = feature.getGeometry() as SimpleGeometry
       const flatCoords = geometry.getFlatCoordinates()
       const [lon, lat] = flatCoords
-      const start = toLonLat([lon, lat])
+      const start = transform([lon, lat], this.#mapProj, 'EPSG:4326')
       const start3857 = fromLonLat(start)
       const startAt = {
         coord: start,
         coord3857: start3857,
       }
-      const end = toLonLat([flatCoords.at(-2)!, flatCoords.at(-1)!])
+      const end = transform([flatCoords.at(-2)!, flatCoords.at(-1)!], this.#mapProj, 'EPSG:4326')
       const end3857 = fromLonLat(end)
       const endAt = {
         coord: end,
@@ -1052,34 +1052,31 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #convertCircleToData(feature: Feature<Circle>): GeometryData {
     const circle = feature.getGeometry() as Circle
     const flatCoords = circle.getFlatCoordinates()
-    const r = circle.getRadius()
-    const center = toLonLat(circle.getCenter())
+    //const r = circle.getRadius()
+    const center = transform(circle.getCenter(), this.#mapProj, 'EPSG:4326')
     const c1 = transform([flatCoords[2], flatCoords[3]], this.#mapProj, 'EPSG:4326')
     const radius = getDistance(center, c1)
     const center3857 = fromLonLat(center)
-    const code = this.#mapProj.replace('EPSG:', '')
     const properties = {
-      geometry: 'circle',
+      geometryType: 'circle',
       center,
       radius,
       center3857,
-      ['radius' + code]: r,
     }
 
-    const polygon = circular(center, r, 128)
+    const polygon = circular(center, radius, 128)
     const id = feature.getId()
     const polygonFeature = new Feature(polygon)
     polygonFeature.setId(id)
+    polygonFeature.setProperties(properties)
     const wkt = new WKT().writeFeature(polygonFeature, {
-      dataProjection: this.#dataProj,
-      featureProjection: this.#dataProj,
+      dataProjection: 'EPSG:4326',
+      featureProjection: this.#mapProj,
     })
     const geojsonObj = new GeoJSON().writeFeatureObject(polygonFeature, {
-      dataProjection: this.#dataProj,
-      featureProjection: this.#dataProj,
+      dataProjection: 'EPSG:4326',
+      featureProjection: this.#mapProj,
     })
-
-    geojsonObj.properties = properties
     const geoJson = JSON.stringify(geojsonObj)
 
     return {
