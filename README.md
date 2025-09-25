@@ -58,8 +58,8 @@ options has some props:
 | --------------- | ------------------------------- | --------------------------------------------- | ---------------------------- |
 | showToolBar     | boolean                         | true                                          | render tool bar or not       |
 | supportFreehand | boolean                         | true                                          | support freehand draw or not |
-| drawTypes       | Array                           | ['Point', 'LineString', 'Polygon', 'Circle']  | draw geometry types          |
-| actions         | Array                           | ['remove', 'modify', 'translate', 'complete'] | operations on geometry       |
+| drawTypes       | Array                           | ['Point', 'LineString', 'Polygon', 'Circle']  | draw feature types           |
+| actions         | Array                           | ['remove', 'modify', 'translate', 'complete'] | operations on feature        |
 | layerStyle      | Style \| StyleLike \| FlatStyle | openLayers default feature style              | default feature style        |
 | selectedStyle   | StyleLike                       | below                                         | feature style is selected    |
 
@@ -132,7 +132,7 @@ const lineWKT = 'LINESTRING(106.55773424492708 26.68974989181626,106.79592190619
 geomEditor.addFeatureFromWKT(lineWKT, 'test', 'EPSG:3857')
 const pointJSON = JSON.stringify({
   type: 'Feature',
-  geometry: {
+  feature: {
     type: 'Point',
     coordinates: [106.51521987473564, 26.73992541007939],
   },
@@ -143,7 +143,7 @@ geomEditor.addFeatureFromJSON(pointJSON, 'EPSG:3857')
 
 const circle = {
   type: 'Feature',
-  geometry: {
+  feature: {
     type: 'Polygon',
     coordinates: [
       [
@@ -193,14 +193,14 @@ const circle = {
 geomEditor.addFeatureFromJSON(circle, { featureProjection: 'EPSG:3857' })
 ```
 
-### draw geometry
+### draw feature
 
 > `enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle)`
 
-| param | type                            | default                 | optional | desc               |
-| ----- | ------------------------------- | ----------------------- | -------- | ------------------ |
-| type  | string                          |                         | required | draw geometry type |
-| style | Style \| StyleLike \| FlatStyle | ol default sketch style | ✅       | sketch style       |
+| param | type                            | default                 | optional | desc              |
+| ----- | ------------------------------- | ----------------------- | -------- | ----------------- |
+| type  | string                          |                         | required | draw feature type |
+| style | Style \| StyleLike \| FlatStyle | ol default sketch style | ✅       | sketch style      |
 
 type pass `None` to draw nothing.
 
@@ -311,19 +311,21 @@ translate interaction support multi mode default, modify interaction support sin
 
 > `disableSelect()` -- disable select interaction
 
-### modify geometry
+### modify feature
 
 > `enableModify(style?: StyleLike | FlatStyle)` -- enable modify interaction
 
 > `disableModify()` -- disable modify interaction
 
-### translate geometry
+### translate features
 
 > `enableTranslate()` -- enable translate interaction
 
 > `disableTranslate()` -- disable translate interaction
 
-### remove geometry
+translate interaction support multi mode default, modify interaction support single mode only.
+
+### remove feature
 
 > `removeFeatures(id?: Id | Id[])` - remove features
 
@@ -346,11 +348,11 @@ geomEditor.removeAllFeatures().then(success => {
 })
 ```
 
-### complete editor
+### complete edit
 
 > `completeEdit()` -- complete edit
 
-all features will reset original status.
+All features will reset original status.
 
 ## events
 
@@ -368,14 +370,14 @@ event list:
 | ----------------- | ------------------------- |
 | select            | select feature            |
 | deselect          | deselect feature          |
-| drawBegin         | begin draw geometry       |
-| drawComplete      | finish draw geometry      |
-| modifyBegin       | begin modify geometry     |
-| modifyComplete    | finish modify geometry    |
-| translateBegin    | begin translate geometry  |
-| translateComplete | finish translate geometry |
-| remove            | remove geometry           |
-| complete          | complete edit geometry    |
+| drawBegin         | begin draw feature        |
+| drawComplete      | finish draw feature       |
+| modifyBegin       | begin modify feature      |
+| modifyComplete    | finish modify feature     |
+| translateBegin    | begin translate features  |
+| translateComplete | finish translate features |
+| remove            | remove feature            |
+| complete          | complete edit feature     |
 
 > The original event will also be triggered during interacting.
 
