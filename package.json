@@ -55,9 +55,6 @@
   "peerDependencies": {
     "ol": ">=7"
   },
-  "dependencies": {
-    "petite-utils": "^0.0.25"
-  },
   "author": "ZhouQijun <zhouQijun4job@163.com>",
   "repository": {
     "type": "git",
