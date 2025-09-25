@@ -10,7 +10,7 @@ import 'ol/ol.css'
 import 'highlight.js/styles/github.css'
 import '../../src/geom-editor.scss'
 import './reset.css'
-import './style.css'
+import './style.scss'
 import './docs.scss'
 
 //import { GeomEditor } from '../../dist/index.js'
