@@ -7871,13 +7871,13 @@ const Bf = `<h1>ol-geom-editor</h1>
 <td>drawTypes</td>
 <td>Array</td>
 <td>['Point', 'LineString', 'Polygon', 'Circle']</td>
-<td>draw geometry types</td>
+<td>draw feature types</td>
 </tr>
 <tr>
 <td>actions</td>
 <td>Array</td>
 <td>['remove', 'modify', 'translate', 'complete']</td>
-<td>operations on geometry</td>
+<td>operations on feature</td>
 </tr>
 <tr>
 <td>layerStyle</td>
@@ -8069,7 +8069,7 @@ const Bf = `<h1>ol-geom-editor</h1>
 geomEditor.<span class="hljs-title function_">addFeatureFromWKT</span>(lineWKT, <span class="hljs-string">&#x27;test&#x27;</span>, <span class="hljs-string">&#x27;EPSG:3857&#x27;</span>)
 <span class="hljs-keyword">const</span> pointJSON = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>({
   <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;Feature&#x27;</span>,
-  <span class="hljs-attr">geometry</span>: {
+  <span class="hljs-attr">feature</span>: {
     <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;Point&#x27;</span>,
     <span class="hljs-attr">coordinates</span>: [<span class="hljs-number">106.51521987473564</span>, <span class="hljs-number">26.73992541007939</span>],
   },
@@ -8080,7 +8080,7 @@ geomEditor.<span class="hljs-title function_">addFeatureFromJSON</span>(pointJSO
 
 <span class="hljs-keyword">const</span> circle = {
   <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;Feature&#x27;</span>,
-  <span class="hljs-attr">geometry</span>: {
+  <span class="hljs-attr">feature</span>: {
     <span class="hljs-attr">type</span>: <span class="hljs-string">&#x27;Polygon&#x27;</span>,
     <span class="hljs-attr">coordinates</span>: [
       [
@@ -8129,7 +8129,7 @@ geomEditor.<span class="hljs-title function_">addFeatureFromJSON</span>(pointJSO
 }
 geomEditor.<span class="hljs-title function_">addFeatureFromJSON</span>(circle, { <span class="hljs-attr">featureProjection</span>: <span class="hljs-string">&#x27;EPSG:3857&#x27;</span> })
 </code></pre>
-<h3>draw geometry</h3>
+<h3>draw feature</h3>
 <blockquote>
 <p><code>enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle)</code></p>
 </blockquote>
@@ -8149,7 +8149,7 @@ geomEditor.<span class="hljs-title function_">addFeatureFromJSON</span>(circle, 
 <td>string</td>
 <td></td>
 <td>required</td>
-<td>draw geometry type</td>
+<td>draw feature type</td>
 </tr>
 <tr>
 <td>style</td>
@@ -8350,21 +8350,22 @@ geomEditor.<span class="hljs-title function_">addFeatureFromJSON</span>(circle, 
 <blockquote>
 <p><code>disableSelect()</code> -- disable select interaction</p>
 </blockquote>
-<h3>modify geometry</h3>
+<h3>modify feature</h3>
 <blockquote>
 <p><code>enableModify(style?: StyleLike | FlatStyle)</code> -- enable modify interaction</p>
 </blockquote>
 <blockquote>
 <p><code>disableModify()</code> -- disable modify interaction</p>
 </blockquote>
-<h3>translate geometry</h3>
+<h3>translate features</h3>
 <blockquote>
 <p><code>enableTranslate()</code> -- enable translate interaction</p>
 </blockquote>
 <blockquote>
 <p><code>disableTranslate()</code> -- disable translate interaction</p>
 </blockquote>
-<h3>remove geometry</h3>
+<p>translate interaction support multi mode default, modify interaction support single mode only.</p>
+<h3>remove feature</h3>
 <blockquote>
 <p><code>removeFeatures(id?: Id | Id[])</code> - remove features</p>
 </blockquote>
@@ -8400,11 +8401,11 @@ geomEditor.<span class="hljs-title function_">removeAllFeatures</span>().<span c
   <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>({ success })
 })
 </code></pre>
-<h3>complete editor</h3>
+<h3>complete edit</h3>
 <blockquote>
 <p><code>completeEdit()</code> -- complete edit</p>
 </blockquote>
-<p>all features will reset original status.</p>
+<p>All features will reset original status.</p>
 <h2>events</h2>
 <p>GeomEditor trigger some events when interact with features.</p>
 <blockquote>
@@ -8435,35 +8436,35 @@ geomEditor.<span class="hljs-title function_">removeAllFeatures</span>().<span c
 </tr>
 <tr>
 <td>drawBegin</td>
-<td>begin draw geometry</td>
+<td>begin draw feature</td>
 </tr>
 <tr>
 <td>drawComplete</td>
-<td>finish draw geometry</td>
+<td>finish draw feature</td>
 </tr>
 <tr>
 <td>modifyBegin</td>
-<td>begin modify geometry</td>
+<td>begin modify feature</td>
 </tr>
 <tr>
 <td>modifyComplete</td>
-<td>finish modify geometry</td>
+<td>finish modify feature</td>
 </tr>
 <tr>
 <td>translateBegin</td>
-<td>begin translate geometry</td>
+<td>begin translate features</td>
 </tr>
 <tr>
 <td>translateComplete</td>
-<td>finish translate geometry</td>
+<td>finish translate features</td>
 </tr>
 <tr>
 <td>remove</td>
-<td>remove geometry</td>
+<td>remove feature</td>
 </tr>
 <tr>
 <td>complete</td>
-<td>complete edit geometry</td>
+<td>complete edit feature</td>
 </tr>
 </tbody>
 </table>
