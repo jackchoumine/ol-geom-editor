@@ -1,6 +1,6 @@
 {
   "name": "ol-geom-editor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "An elegant OpenLayers extension for editing geometric shapes.",
   "type": "module",
   "license": "MIT",
