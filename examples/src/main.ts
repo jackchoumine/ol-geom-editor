@@ -17,9 +17,9 @@ import './docs.scss'
 //import '../../dist/geom-editor.css'
 //@ts-ignore
 import readme from '../../README.md'
-import { GeomEditor } from '../../src/GeomEditor'
+import { GeomEditor, version } from '../../src'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
-
+console.log({ version }, 'zqj')
 document.querySelector('.docs').innerHTML = readme
 
 const guiYang = [106.675271, 26.579508]
