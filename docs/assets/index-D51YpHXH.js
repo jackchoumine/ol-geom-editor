@@ -8405,7 +8405,7 @@ geomEditor.<span class="hljs-title function_">removeAllFeatures</span>().<span c
 <blockquote>
 <p><code>completeEdit()</code> -- complete edit</p>
 </blockquote>
-<p>All features will reset original status.</p>
+<p>All style of features will reset original status.</p>
 <h2>events</h2>
 <p>GeomEditor trigger some events when interact with features.</p>
 <blockquote>
@@ -8504,7 +8504,7 @@ Feel free to open an issue, suggest a feature, or submit a pull request.</p>
 <h2>⭐ Support</h2>
 <p>If you find this project helpful, please consider giving it a star ⭐ — it helps others discover the project and keeps us motivated! <a href="https://github.com/jackchoumine/ol-geom-editor">give me a star</a></p>
 `,
-  Vf = '1.0.3',
+  Vf = '1.0.4',
   Uf = {
     1: 'The view center is not defined',
     2: 'The view resolution is not defined',
