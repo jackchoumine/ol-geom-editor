@@ -352,7 +352,7 @@ geomEditor.removeAllFeatures().then(success => {
 
 > `completeEdit()` -- complete edit
 
-All features will reset original status.
+All style of features will reset original status.
 
 ## events
 
