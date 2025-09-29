@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite --open",
     "build": "vite build --outDir ../docs --base ./",
-    "preview": "vite preview",
+    "preview": "vite preview --outDir ../docs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
