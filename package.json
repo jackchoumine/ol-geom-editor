@@ -13,9 +13,11 @@
   "types": "dist/index.d.ts",
   "unpkg": "dist/index.iife.js",
   "jsdelivr": "dist/index.iife.js",
+  "style": "dist/index.css",
   "exports": {
     ".": "./dist/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./style": "dist/index.css"
   },
   "publishConfig": {
     "access": "public"
