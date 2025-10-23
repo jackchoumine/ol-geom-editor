@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-25 02:06:26
+ * @LastEditTime: 2025-10-23 10:57:42
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -217,12 +217,12 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   /*
    * @description 从 WKT 字符串添加要素
    */
-  addFeatureFromWKT(wkt: string, id?: Id, projection: ProjCode | FeatureOptions = 'EPSG:4326'): boolean {
-    if (!wkt || !isWKT(wkt)) return false
+  addFeatureFromWKT(wkt: string, id?: Id, projection: ProjCode | FeatureOptions = 'EPSG:4326') {
+    if (!wkt || !isWKT(wkt)) return null
     if (id) {
       // 已经存在要素
       const hasFeature = this.#source.getFeatureById(id)
-      if (hasFeature) return false
+      if (hasFeature) return hasFeature
     }
     let feature
     if (typeof projection === 'string') {
@@ -238,33 +238,33 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     const type = getWKTType(wkt)
     feature.setId(id ?? genId(type ?? ''))
     this.#source.addFeature(feature)
-    return true
+    return feature
   }
 
-  addFeatureFromJSON(JSON: string | GeoJSONT, projection: ProjCode | FeatureOptions = 'EPSG:4326'): boolean {
-    if (!JSON) return false
+  addFeatureFromJSON(JSON: string | GeoJSONT, dataProjection: ProjCode | FeatureOptions = 'EPSG:4326') {
+    if (!JSON) return null
     let JSON_ = ''
     if (typeof JSON === 'object') {
       if (!isGeoJSONObj(JSON)) {
-        return false
+        return null
       }
       try {
         JSON_ = window.JSON.stringify(JSON)
       } catch (error) {
-        return false
+        return null
       }
     } else {
       JSON_ = JSON
     }
     if (isGeoJSON(JSON_)) {
       let feature
-      if (typeof projection === 'string') {
+      if (typeof dataProjection === 'string') {
         feature = new GeoJSON().readFeature(JSON_, {
-          dataProjection: projection,
+          dataProjection: dataProjection,
           featureProjection: this.#mapProj,
         })
       } else {
-        const { style, ...projectionOptions } = projection
+        const { style, ...projectionOptions } = dataProjection
         feature = new GeoJSON().readFeature(JSON_, projectionOptions)
         style && feature.setStyle(style)
       }
@@ -276,7 +276,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         feature.setId(genId(type))
       } else {
         const hasFeature = this.#source.getFeatureById(id)
-        if (hasFeature) return false
+        if (hasFeature) return hasFeature
       }
       const isCircle = props.geometryType === 'circle'
       // 使用多边形拟合圆
@@ -297,9 +297,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       } else {
         this.#source.addFeature(feature)
       }
-      return true
+      return feature
     }
-    return false
+    return null
   }
 
   enableDraw(type: GeomType, style?: Style | StyleLike | FlatStyle): void {

@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-09-24 01:34:31
+ * @LastEditTime: 2025-10-23 10:56:07
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -184,16 +184,21 @@ export abstract class GeomEditorI {
    * 从 wkt 读取要素
    * @param wkt wkt字符串
    * @param id 可选的 id，如果提供，则设置要素的 id，否则自动生成一个唯一 id
-   * @param projection wkt 字符串的投影，默认 'EPSG:4326'
+   * @param dataProjection
+   * @return 要素对象
    */
-  abstract addFeatureFromWKT(wkt: string, id: Id, dataProjection: ProjCode | FeatureOptions): boolean
+  abstract addFeatureFromWKT(wkt: string, id: Id, dataProjection: ProjCode | FeatureOptions): Feature | null
 
   /**
    * 从 JSON 添加要素
    * @param JSON 字符串 或者 GeoJSON 对象
-   * @param projection JSON 的投影，默认 'EPSG:4326'
+   * @param dataProjection
+   * @return 要素对象
    */
-  abstract addFeatureFromJSON(JSON: string | GeoJSON, dataProjection: ProjCode | FeatureOptions): boolean
+  abstract addFeatureFromJSON(
+    JSON: string | GeoJSON,
+    dataProjection: ProjCode | FeatureOptions,
+  ): Feature | null
 
   /**
    * 启用绘制

@@ -130,20 +130,23 @@ document.querySelector('#freehand')!.addEventListener('change', onChangeFreehand
 
 function addWKT() {
   console.log('addWKT')
-  olDraw.addFeatureFromWKT(lineWKT, 'line1')
-  olDraw.addFeatureFromWKT(polygonWKT)
+  const feat1 = olDraw.addFeatureFromWKT(lineWKT, 'line1')
+  const feat2 = olDraw.addFeatureFromWKT(polygonWKT)
+  console.log({ feat1, feat2 })
 }
 
 function addJSON() {
   console.log('addJSON')
   // { dataProjection: 'EPSG:4326' }
-  olDraw.addFeatureFromJSON(pointJSON)
+  const f = olDraw.addFeatureFromJSON(pointJSON)
+  console.log({ f })
 }
 
 function addJSONObj() {
   console.log('addJSONObj')
-  olDraw.addFeatureFromJSON(geoJSONObj)
-  olDraw.addFeatureFromJSON(circle)
+  const feat1 = olDraw.addFeatureFromJSON(geoJSONObj)
+  const feat2 = olDraw.addFeatureFromJSON(circle)
+  console.log({ feat2, feat1 })
 }
 
 function removeSelectedFeatures() {
