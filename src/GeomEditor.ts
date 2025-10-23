@@ -430,7 +430,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.#enableBtn('freehand', true, `enable freehand draw.`)
     }
     this.#map.removeInteraction(this.#drawer)
-    this.#drawer = undefined
+    this.#drawer = null
     unByKey(this.#drawEndOn!)
     unByKey(this.#drawStartOn!)
   }

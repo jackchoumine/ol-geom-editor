@@ -107,7 +107,7 @@ const selectedStyle = new Style({
 
 You can add feature by WKT or GeoJSON.
 
-> `addFeatureFromWKT(wkt:string, id?:string, dataProjection?:string | FeatureOptions)`
+> `addFeatureFromWKT(wkt:string, id?:string, dataProjection?:string | FeatureOptions): Feature | null`
 
 | param          | type                     | default       | optional | desc            |
 | -------------- | ------------------------ | ------------- | -------- | --------------- |
@@ -123,7 +123,7 @@ FeatureOptions is a Object :
 | featureProjection | string    | 'EPSG:3857'              | ✅       | map projection  |
 | style             | StyleLike | default ol feature style | ✅       | feature style   |
 
-> `addFeatureFromJSON(JSON:string | geoJSONObj, dataProjection?:string | FeatureOptions)`
+> `addFeatureFromJSON(JSON:string | geoJSONObj, dataProjection?:string | FeatureOptions): Feature | null`
 
 #### examples
 
