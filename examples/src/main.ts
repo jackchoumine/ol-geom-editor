@@ -8,8 +8,8 @@ import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 
 import 'ol/ol.css'
 import 'highlight.js/styles/github.css'
-//import '../../src/geom-editor.scss'
-import 'ol-geom-editor/dist/index.css'
+import '../../dist/index.css'
+//import 'ol-geom-editor/dist/index.css'
 import './reset.css'
 import './style.scss'
 import './docs.scss'
@@ -18,8 +18,8 @@ import './docs.scss'
 //import '../../dist/geom-editor.css'
 //@ts-ignore
 import readme from '../../README.md'
-//import { GeomEditor, version } from '../../src'
-import { GeomEditor, version } from 'ol-geom-editor'
+import { GeomEditor, version } from '../../dist'
+//import { GeomEditor, version } from 'ol-geom-editor'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
 console.log({ version }, 'zqj')
 document.querySelector('.docs').innerHTML = readme
