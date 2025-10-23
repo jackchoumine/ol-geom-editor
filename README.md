@@ -21,7 +21,7 @@ then
 ```js
 import { GeomEditor } from 'ol-geom-editor'
 // import style if need show tool bar
-import 'ol-geom-editor/index.css'
+import 'ol-geom-editor/dist/index.css'
 
 const geomEditor = new GeomEditor(olMap) // pass ol map instance
 ```
