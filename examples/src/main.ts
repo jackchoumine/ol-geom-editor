@@ -8,7 +8,9 @@ import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
 
 import 'ol/ol.css'
 import 'highlight.js/styles/github.css'
+// 测试编译后的代码
 import '../../dist/index.css'
+// 发布到 npm 的代码
 //import 'ol-geom-editor/dist/index.css'
 import './reset.css'
 import './style.scss'
@@ -18,10 +20,13 @@ import './docs.scss'
 //import '../../dist/geom-editor.css'
 //@ts-ignore
 import readme from '../../README.md'
-import { GeomEditor, version } from '../../dist'
-//import { GeomEditor, version } from 'ol-geom-editor'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
+// 编译后的代码
+import { GeomEditor, version } from '../../dist'
+// 发布到 npm 的代码
+//import { GeomEditor, version } from 'ol-geom-editor'
 console.log({ version }, 'zqj')
+
 document.querySelector('.docs').innerHTML = readme
 
 const guiYang = [106.675271, 26.579508]

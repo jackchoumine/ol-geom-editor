@@ -400,7 +400,7 @@ code.hljs {
   flex-direction: column;
   top: 50%;
   transform: translateY(-50%);
-  right: 10px;
+  right: 4px;
 }
 .geom-editor-tool-bar .geom-editor-btn {
   width: 1.75em;
