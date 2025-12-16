@@ -26,6 +26,7 @@ import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.t
 //import { GeomEditor } from '../../src/GeomEditor'
 // 发布到 npm 的代码
 import { GeomEditor, version } from 'ol-geom-editor'
+import { Point } from 'ol/geom'
 console.log({ version }, 'zqj')
 
 document.querySelector('.docs').innerHTML = readme
@@ -69,22 +70,31 @@ olDraw.on('select', event => {
   console.log({ event })
 })
 
-olDraw.on('deselect', event => {
-  console.log({ event })
-  const { deselected: features } = event
-  let pointStyle = new Style({
+const modifyEndGeomStyle = {
+  Point: new Style({
     image: new Icon({
       src: '/typescript.svg', // 图片URL
       anchor: [0.5, 0.5], // 锚点：图片底部中心对齐坐标点
       scale: 0.7, // 缩放比例
     }),
-  })
+  }),
+  Polygon: new Style({
+    fill: new Fill({
+      color: 'rgba(255, 0, 0, 0.3)', // Semi-transparent red fill
+    }),
+    stroke: new Stroke({
+      color: '#ff0000', // Solid red outline
+      width: 4,
+    }),
+  }),
+}
+
+olDraw.on('deselect', event => {
+  console.log({ event })
+  const { deselected: features } = event
   features.forEach(f => {
     const type = f.getGeometry().getType()
-    console.log({ type })
-    if (type === 'Point') {
-      f.setStyle(pointStyle)
-    }
+    f.setStyle(modifyEndGeomStyle[type])
   })
 })
 olDraw.on('drawstart', event => {
@@ -98,21 +108,30 @@ olDraw.on('drawBegin', event => {
   console.log({ event })
 })
 
-olDraw.on('drawComplete', event => {
-  console.log({ event })
-  const { feature } = event
-  let pointStyle = new Style({
+const drawCompleteGeomStyle = {
+  Point: new Style({
     image: new Icon({
-      src: '/typescript.svg', // 图片URL
+      src: '/end.png',
       anchor: [0.5, 0.5], // 锚点：图片底部中心对齐坐标点
       scale: 0.7, // 缩放比例
     }),
-  })
+  }),
+  Polygon: new Style({
+    fill: new Fill({
+      color: 'rgba(255, 0, 0, 1)', // Semi-transparent red fill
+    }),
+    stroke: new Stroke({
+      color: '#ff0', // Solid red outline
+      width: 10,
+    }),
+  }),
+}
+olDraw.on('drawComplete', event => {
+  console.log({ event })
+  const { feature } = event
   const type = feature.getGeometry().getType()
   console.log({ type })
-  if (type === 'Point') {
-    feature.setStyle(pointStyle)
-  }
+  feature.setStyle(drawCompleteGeomStyle[type])
 })
 olDraw.on('translatestart', event => {
   console.log({ event })
