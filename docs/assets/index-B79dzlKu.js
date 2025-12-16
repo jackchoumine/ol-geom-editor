@@ -672,6 +672,46 @@ geomEditor.<span class="hljs-title function_">removeAllFeatures</span>().<span c
 <blockquote>
 <p>Recommend use GeomEditor events, because it has converted feature to WKT and GeoJSON and include data in original event. More convenient！</p>
 </blockquote>
+<blockquote>
+<p>The order in which the events are triggered is as follows:</p>
+</blockquote>
+<pre><code class="hljs language-bash"><span class="hljs-comment"># draw geometry</span>
+drawstart <span class="hljs-comment"># original event</span>
+↓
+drawBegin <span class="hljs-comment"># recommend, it is more convenient</span>
+↓
+drawend <span class="hljs-comment"># original event</span>
+↓ <span class="hljs-comment"># NOTE</span>
+drawComplete <span class="hljs-comment"># recommend！ You can set style when it emit</span>
+
+<span class="hljs-comment"># modify geometry</span>
+<span class="hljs-keyword">select</span>
+↓
+modifystart
+↓
+modifyBegin
+↓
+modifyend
+↓
+modifyComplete
+↓ <span class="hljs-comment"># NOTE</span>
+deselect <span class="hljs-comment"># click on the non feature area</span>
+<span class="hljs-comment"># set style when deselect</span>
+
+<span class="hljs-comment"># translate geometry</span>
+<span class="hljs-keyword">select</span>
+↓
+translatestart
+↓
+translateBegin
+↓
+translateend
+↓
+translateComplete <span class="hljs-comment"># recommend！</span>
+↓ <span class="hljs-comment"># NOTE</span>
+deselect <span class="hljs-comment"># click on the non feature area</span>
+<span class="hljs-comment"># set style when deselect</span>
+</code></pre>
 <h4>examples</h4>
 <pre><code class="hljs language-js"><span class="hljs-comment">// original event</span>
 geomEditor.<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;modifystart&#x27;</span>, <span class="hljs-function"><span class="hljs-params">event</span> =&gt;</span> {

@@ -383,6 +383,47 @@ event list:
 
 > Recommend use GeomEditor events, because it has converted feature to WKT and GeoJSON and include data in original event. More convenient！
 
+> The order in which the events are triggered is as follows:
+
+```bash
+# draw geometry
+drawstart # original event
+↓
+drawBegin # recommend, it is more convenient
+↓
+drawend # original event
+↓ # NOTE
+drawComplete # recommend！ You can set style when it emit
+
+# modify geometry
+select
+↓
+modifystart
+↓
+modifyBegin
+↓
+modifyend
+↓
+modifyComplete
+↓ # NOTE
+deselect # click on the non feature area
+# set style when deselect
+
+# translate geometry
+select
+↓
+translatestart
+↓
+translateBegin
+↓
+translateend
+↓
+translateComplete # recommend！
+↓ # NOTE
+deselect # click on the non feature area
+# set style when deselect
+```
+
 #### examples
 
 ```js
