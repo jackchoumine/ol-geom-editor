@@ -26,8 +26,7 @@ import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.t
 //import { GeomEditor } from '../../src/GeomEditor'
 // 发布到 npm 的代码
 import { GeomEditor, version } from 'ol-geom-editor'
-import { Point } from 'ol/geom'
-console.log({ version }, 'zqj')
+//console.log({ version }, 'zqj')
 
 document.querySelector('.docs').innerHTML = readme
 
