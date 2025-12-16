@@ -31,6 +31,9 @@ import { GeomEditor, version } from 'ol-geom-editor'
 
 document.querySelector('.docs').innerHTML = readme
 
+const endPngUrl = 'https://jackchoumine.github.io/ol-geom-editor/end.png'
+const svgUrl = 'https://jackchoumine.github.io/ol-geom-editor/typescript.svg'
+
 const guiYang = [106.675271, 26.579508]
 
 const guiYang3857 = fromLonLat(guiYang)
@@ -67,13 +70,13 @@ const olDraw = new GeomEditor(map, {
 })
 
 olDraw.on('select', event => {
-  console.log({ event })
+  console.log('select', { event })
 })
 
 const modifyEndGeomStyle = {
   Point: new Style({
     image: new Icon({
-      src: '/typescript.svg', // 图片URL
+      src: import.meta.env.DEV ? '/typescript.svg' : svgUrl,
       anchor: [0.5, 0.5], // 锚点：图片底部中心对齐坐标点
       scale: 0.7, // 缩放比例
     }),
@@ -90,7 +93,7 @@ const modifyEndGeomStyle = {
 }
 
 olDraw.on('deselect', event => {
-  console.log({ event })
+  console.log('deselect', { event })
   const { deselected: features } = event
   features.forEach(f => {
     const type = f.getGeometry().getType()
@@ -98,20 +101,20 @@ olDraw.on('deselect', event => {
   })
 })
 olDraw.on('drawstart', event => {
-  console.log({ event })
+  console.log('drawstart', { event })
 })
 olDraw.on('drawend', event => {
-  console.log({ event })
+  console.log('drawend', { event })
 })
 
 olDraw.on('drawBegin', event => {
-  console.log({ event })
+  console.log('drawBegin', { event })
 })
 
 const drawCompleteGeomStyle = {
   Point: new Style({
     image: new Icon({
-      src: '/end.png',
+      src: import.meta.env.DEV ? '/end.png' : endPngUrl,
       anchor: [0.5, 0.5], // 锚点：图片底部中心对齐坐标点
       scale: 0.7, // 缩放比例
     }),
@@ -127,39 +130,39 @@ const drawCompleteGeomStyle = {
   }),
 }
 olDraw.on('drawComplete', event => {
-  console.log({ event })
+  console.log('drawComplete', { event })
   const { feature } = event
   const type = feature.getGeometry().getType()
   console.log({ type })
   feature.setStyle(drawCompleteGeomStyle[type])
 })
 olDraw.on('translatestart', event => {
-  console.log({ event })
+  console.log('translatestart', { event })
 })
 
 olDraw.on('translateend', event => {
-  console.log({ event })
+  console.log('translateend', { event })
 })
 olDraw.on('translateBegin', event => {
-  console.log({ event })
+  console.log('translateBegin', { event })
 })
 
 olDraw.on('translateComplete', event => {
-  console.log({ event })
+  console.log('translateComplete', { event })
 })
 
 olDraw.on('modifystart', event => {
-  console.log({ event })
+  console.log('modifystart', { event })
 })
 olDraw.on('modifyend', event => {
-  console.log({ event })
+  console.log('modifyend', { event })
 })
 olDraw.on('modifyBegin', event => {
-  console.log({ event })
+  console.log('modifyBegin', { event })
 })
 
 olDraw.on('modifyComplete', event => {
-  console.log({ event })
+  console.log('modifyComplete', { event })
 })
 olDraw.on('remove', event => {
   console.log({ event })
