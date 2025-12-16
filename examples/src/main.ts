@@ -100,6 +100,19 @@ olDraw.on('drawBegin', event => {
 
 olDraw.on('drawComplete', event => {
   console.log({ event })
+  const { feature } = event
+  let pointStyle = new Style({
+    image: new Icon({
+      src: '/typescript.svg', // 图片URL
+      anchor: [0.5, 0.5], // 锚点：图片底部中心对齐坐标点
+      scale: 0.7, // 缩放比例
+    }),
+  })
+  const type = feature.getGeometry().getType()
+  console.log({ type })
+  if (type === 'Point') {
+    feature.setStyle(pointStyle)
+  }
 })
 olDraw.on('translatestart', event => {
   console.log({ event })
