@@ -23,6 +23,7 @@ import readme from '../../README.md'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
 // 编译后的代码
 //import { GeomEditor, version } from '../../dist'
+// 源码调试
 //import { GeomEditor } from '../../src/GeomEditor'
 // 发布到 npm 的代码
 import { GeomEditor, version } from 'ol-geom-editor'
