@@ -4,7 +4,7 @@ import type { Feature } from 'ol'
 import { Tile } from 'ol/layer'
 import { fromLonLat } from 'ol/proj'
 import { OSM } from 'ol/source'
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
+import { Circle as CircleStyle, Fill, Icon, Stroke, Style } from 'ol/style'
 
 import 'ol/ol.css'
 import 'highlight.js/styles/github.css'
@@ -22,9 +22,10 @@ import './docs.scss'
 import readme from '../../README.md'
 import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.ts'
 // 编译后的代码
-import { GeomEditor, version } from '../../dist'
+//import { GeomEditor, version } from '../../dist'
+//import { GeomEditor } from '../../src/GeomEditor'
 // 发布到 npm 的代码
-//import { GeomEditor, version } from 'ol-geom-editor'
+import { GeomEditor, version } from 'ol-geom-editor'
 console.log({ version }, 'zqj')
 
 document.querySelector('.docs').innerHTML = readme
@@ -53,7 +54,7 @@ const layerStyle = {
   'fill-color': 'rgba(255,255,255,0.4)',
   'stroke-color': '#3399CC',
   'stroke-width': 1.25,
-  'circle-radius': 5,
+  'circle-radius': 50,
   'circle-fill-color': 'rgba(255,255,255,0.4)',
   'circle-stroke-width': 1.25,
   'circle-stroke-color': '#3399CC',
@@ -61,6 +62,7 @@ const layerStyle = {
 
 const olDraw = new GeomEditor(map, {
   layerStyle,
+  //selectedStyle: false,
 })
 
 olDraw.on('select', event => {
@@ -69,6 +71,21 @@ olDraw.on('select', event => {
 
 olDraw.on('deselect', event => {
   console.log({ event })
+  const { deselected: features } = event
+  let pointStyle = new Style({
+    image: new Icon({
+      src: '/typescript.svg', // 图片URL
+      anchor: [0.5, 0.5], // 锚点：图片底部中心对齐坐标点
+      scale: 0.7, // 缩放比例
+    }),
+  })
+  features.forEach(f => {
+    const type = f.getGeometry().getType()
+    console.log({ type })
+    if (type === 'Point') {
+      f.setStyle(pointStyle)
+    }
+  })
 })
 olDraw.on('drawstart', event => {
   console.log({ event })
@@ -98,6 +115,7 @@ olDraw.on('translateBegin', event => {
 olDraw.on('translateComplete', event => {
   console.log({ event })
 })
+
 olDraw.on('modifystart', event => {
   console.log({ event })
 })
@@ -107,6 +125,7 @@ olDraw.on('modifyend', event => {
 olDraw.on('modifyBegin', event => {
   console.log({ event })
 })
+
 olDraw.on('modifyComplete', event => {
   console.log({ event })
 })

@@ -83,25 +83,25 @@ const selectedStyle = new Style({
 
 ## GeomEditor has some methods
 
-| method             | desc                                     |
-| ------------------ | ---------------------------------------- |
-| addFeatureFromWKT  | add feature by wkt                       |
-| addFeatureFromJSON | add feature by GeoJSON or GeoJSON Object |
-| enableDraw         | enable draw interaction                  |
-| disableDraw        | disable draw interaction                 |
-| enableFreehand     | enable freehand draw                     |
-| disableFreehand    | disable freehand draw                    |
-| select             | select features                          |
-| deselect           | deselect features                        |
-| enableSelect       | enable select interaction                |
-| disableSelect      | disable select interaction               |
-| enableModify       | enable modify interaction                |
-| disableModify      | disable modify interaction               |
-| enableTranslate    | enable translate interaction             |
-| disableTranslate   | disable translate interaction            |
-| removeFeatures     | remove features                          |
-| removeAllFeatures  | remove all features                      |
-| completeEdit       | complete edit                            |
+| method             | desc                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| addFeatureFromWKT  | add feature by wkt                                           |
+| addFeatureFromJSON | add feature by GeoJSON or GeoJSON Object                     |
+| enableDraw         | enable draw interaction                                      |
+| disableDraw        | disable draw interaction                                     |
+| enableFreehand     | enable freehand draw                                         |
+| disableFreehand    | disable freehand draw                                        |
+| select             | select features                                              |
+| deselect           | deselect features                                            |
+| enableSelect       | enable select interaction                                    |
+| disableSelect      | disable select interaction                                   |
+| enableModify       | enable modify interaction，modify only one feature once time |
+| disableModify      | disable modify interaction                                   |
+| enableTranslate    | enable translate interaction，can translate multi features   |
+| disableTranslate   | disable translate interaction                                |
+| removeFeatures     | remove features                                              |
+| removeAllFeatures  | remove all features                                          |
+| completeEdit       | complete edit                                                |
 
 ### add features
 
