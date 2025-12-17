@@ -24,9 +24,9 @@ import { circle, geoJSONObj, lineWKT, pointJSON, polygonWKT } from './testData.t
 // 编译后的代码
 //import { GeomEditor, version } from '../../dist'
 // 源码调试
-//import { GeomEditor } from '../../src/GeomEditor'
+import { GeomEditor } from '../../src/GeomEditor'
 // 发布到 npm 的代码
-import { GeomEditor, version } from 'ol-geom-editor'
+//import { GeomEditor, version } from 'ol-geom-editor'
 //console.log({ version }, 'zqj')
 
 document.querySelector('.docs').innerHTML = readme
@@ -129,11 +129,13 @@ const drawCompleteGeomStyle = {
     }),
   }),
 }
+let lastGeomId = ''
 olDraw.on('drawComplete', event => {
   console.log('drawComplete', { event })
   const { feature } = event
+  lastGeomId = feature.getId()
   const type = feature.getGeometry().getType()
-  console.log({ type })
+  console.log({ type, lastGeomId })
   feature.setStyle(drawCompleteGeomStyle[type])
 })
 olDraw.on('translatestart', event => {
@@ -186,6 +188,9 @@ document.querySelector('#translate-features')!.addEventListener('click', onTrans
 document.querySelector('#disable-translate')!.addEventListener('click', disableTranslate)
 document.querySelector('#enable-modify')!.addEventListener('click', enableModify)
 document.querySelector('#disable-modify')!.addEventListener('click', disableModify)
+// 绘制后马上编辑
+document.querySelector('#modify-lead')!.addEventListener('click', modifyLead)
+document.querySelector('#disable-draw')!.addEventListener('click', disableDraw)
 document.querySelector('#select-type')!.addEventListener('change', onChangeType)
 document.querySelector('#freehand')!.addEventListener('change', onChangeFreehand)
 
@@ -279,10 +284,28 @@ function enableModify() {
   olDraw.enableModify()
 }
 
+function disableDraw() {
+  olDraw.disableDraw()
+}
 function disableModify() {
   olDraw.disableModify()
 }
 
+function modifyLead() {
+  olDraw.enableSelect()
+  olDraw.select(lastGeomId, {
+    selectedStyle: new Style({
+      fill: new Fill({
+        color: fillColor,
+      }),
+      stroke: new Stroke({
+        color: strokeColor,
+        width: 40,
+      }),
+    }),
+  })
+  olDraw.enableModify()
+}
 const canFreehandTypes = ['LineString', 'Polygon']
 
 const flatStyle = {
