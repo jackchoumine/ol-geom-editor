@@ -266,7 +266,7 @@ function enableSelect() {
 }
 
 function enableSingleSelect() {
-  olDraw.enableSelect({ single: true })
+  olDraw.enableSelect('single')
 }
 
 function disableSelect() {

@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 19:04:50
+ * @LastEditTime: 2025-12-18 20:47:28
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -14,6 +14,8 @@ import type Style from 'ol/style/Style'
 import type { FlatStyle } from 'ol/style/flat'
 
 import type { GeoJSON } from 'geojson'
+
+export type SelectMode = 'single' | 'multi' | 'box' | 'all' | 'none'
 
 export type ProjCode = `EPSG:${number}`
 
@@ -173,7 +175,7 @@ export type SelectModeOptions = {
   /**
    * 选中时的样式
    */
-  style?: Style | StyleLike | FlatStyle
+  style?: Style | StyleLike // | FlatStyle
 }
 
 /**
@@ -241,7 +243,13 @@ export abstract class GeomEditorI {
    * 选中要素
    * @param options 配置对象
    */
-  abstract enableSelect(options?: SelectModeOptions): boolean
+  abstract enableSelect(
+    mode?: SelectMode,
+    /**
+     * 选中时的样式
+     */
+    style?: Style | StyleLike,
+  ): boolean
 
   /**
    * 禁用选中的要素

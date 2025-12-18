@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 19:37:18
+ * @LastEditTime: 2025-12-18 20:47:17
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -52,7 +52,7 @@ import {
   type GeometryWKT,
   type Id,
   type ProjCode,
-  type SelectModeOptions,
+  type SelectMode,
   type SelectOptions,
   buttons,
 } from './GeomEditorI'
@@ -117,7 +117,11 @@ type GeomEditorOptions = {
    */
   className?: string
   /**
-   * 选中的要素样式
+   * 选中模式
+   */
+  selectMode?: SelectMode
+  /**
+   * 选中时的样式
    */
   selectedStyle?: StyleLike
 }
@@ -199,7 +203,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.render()
     }
     // 点击选中或者取消选中要素
-    this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
+    if ([this.#singleSelectable, this.#multiSelectable].includes(true)) {
+      this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
+    }
     // 设置鼠标样式
     const debounceOnPointerMove = debounce(this.#onPointerMove.bind(this), 50)
     map.on('pointermove', debounceOnPointerMove)
@@ -544,25 +550,14 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     })
   }
 
-  enableSelect(
-    options: SelectModeOptions = {
-      multi: true,
-      box: false,
-      single: false,
-    },
-  ): boolean {
+  enableSelect(mode: SelectMode = 'multi', style: Style | StyleLike = highlightStyle): boolean {
     this.disableDraw()
-    this.#singleSelectable = options?.single === true // 默认关闭单选
-    this.#boxSelectable = options?.box === true // 默认关闭框选
-    this.#multiSelectable = options?.multi !== false // 默认开启多选
-    if (this.#singleSelectable) {
-      this.#multiSelectable = false
-      this.#boxSelectable = false
-    }
+    this.#calcSelectMode(mode)
     if (this.#multiSelectable || this.#boxSelectable) {
       // 有多选，禁用编辑
       this.disableModify()
     }
+    this.selectedStyle = style
     if (this.#selectOn) return true
     this.#selectOn = this.#map!.on('singleclick', this.#whenSingleClick.bind(this))
     return true
@@ -578,9 +573,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   // 平移要素
   enableTranslate(): boolean {
     // 先启用多选
-    this.enableSelect({
-      multi: true,
-    })
+    this.enableSelect('multi')
     this.enableMover = true
     // 禁用修改和绘制
     this.disableModify()
@@ -628,9 +621,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
    */
   enableModify(style?: Style | StyleLike | FlatStyle) {
     // 编辑时一般都是先选中要素，再修改，需单选
-    this.enableSelect({
-      single: true,
-    })
+    this.enableSelect('single')
     this.disableTranslate()
     this.disableDraw()
     this.disableFreehand()
@@ -844,10 +835,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #initOptions(options: GeomEditorOptions) {
-    const { layerStyle, selectedStyle } = options
+    const { layerStyle, selectedStyle, selectMode } = options
     if (selectedStyle) {
       this.selectedStyle = selectedStyle
     }
+    this.#calcSelectMode(selectMode!)
     const z = zIndex + 1
     this.#layer = new VectorLayer({
       zIndex: z,
@@ -874,6 +866,22 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // 操作
     const _actions = buttons.filter(btn => this.actions.includes(btn.name as Action))
     this.allButtons = [..._types, ..._actions]
+  }
+
+  #calcSelectMode(selectMode: SelectMode) {
+    if ('none' === selectMode || selectMode == null) {
+      this.#singleSelectable = false
+      this.#multiSelectable = false
+      this.#boxSelectable = false
+    } else if (['all', 'multi'].includes(selectMode)) {
+      this.#multiSelectable = true
+      this.#boxSelectable = true
+      this.#singleSelectable = false
+    } else if (selectMode === 'single') {
+      this.#singleSelectable = true
+      this.#multiSelectable = false
+      this.#boxSelectable = false
+    }
   }
 
   #whenSingleClick(e: MapBrowserEvent<MouseEvent>) {
