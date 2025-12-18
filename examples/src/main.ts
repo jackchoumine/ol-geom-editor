@@ -66,6 +66,7 @@ const layerStyle = {
 
 const olDraw = new GeomEditor(map, {
   layerStyle,
+  //selectableKey: 'canSelect',
   //selectedStyle: false,
 })
 
@@ -196,7 +197,11 @@ document.querySelector('#freehand')!.addEventListener('change', onChangeFreehand
 
 function addWKT() {
   console.log('addWKT')
-  const feat1 = olDraw.addFeatureFromWKT(lineWKT, 'line1')
+  const feat1 = olDraw.addFeatureFromWKT(lineWKT, 'line1', {
+    customProps: {
+      OGE_SELECTABLE: false,
+    },
+  })
   const feat2 = olDraw.addFeatureFromWKT(polygonWKT)
   console.log({ feat1, feat2 })
 }
@@ -204,7 +209,12 @@ function addWKT() {
 function addJSON() {
   console.log('addJSON')
   // { dataProjection: 'EPSG:4326' }
-  const f = olDraw.addFeatureFromJSON(pointJSON)
+  const f = olDraw.addFeatureFromJSON(pointJSON, {
+    dataProjection: 'EPSG:4326',
+    customProps: {
+      OGE_SELECTABLE: false,
+    },
+  })
   console.log({ f })
 }
 
@@ -233,7 +243,7 @@ const fillColor = 'rgba(218,228,194,0.5)'
 const strokeColor = 'rgba(255, 204, 51, 0.9)'
 
 function onSelect() {
-  const features = olDraw.select(['circle'], {
+  const features = olDraw.select(['circle', 'p2CQqn2lFk'], {
     selectedStyle: new Style({
       fill: new Fill({
         color: fillColor,

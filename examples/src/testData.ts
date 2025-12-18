@@ -204,7 +204,9 @@ export const geoJSONObj = {
       ],
     ],
   },
-  properties: null,
+  properties: {
+    OGE_SELECTABLE: false,
+  },
 }
 
 export const pointJSON = JSON.stringify({
@@ -213,7 +215,9 @@ export const pointJSON = JSON.stringify({
     type: 'Point',
     coordinates: [106.51521987473564, 26.73992541007939],
   },
-  properties: null,
+  properties: {
+    OGE_SELECTABLE: false,
+  },
   id: 'p2CQqn2lFk',
 })
 
