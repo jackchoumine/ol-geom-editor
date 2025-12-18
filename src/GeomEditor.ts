@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 15:30:34
+ * @LastEditTime: 2025-12-18 18:59:43
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -577,7 +577,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   // 平移要素
-  enableTranslate(id?: Id): boolean {
+  enableTranslate(): boolean {
     // 先启用多选
     this.enableSelect({
       multi: true,
