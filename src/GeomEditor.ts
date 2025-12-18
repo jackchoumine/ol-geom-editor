@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 20:59:39
+ * @LastEditTime: 2025-12-18 21:26:32
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -171,6 +171,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #drawEndOn: EventsKey | null = null
   #drawStartOn: EventsKey | null = null
   #selectSingleOn: EventsKey | null = null
+  #selectMultiOn: EventsKey | null = null
 
   #boxSelectable = false
   #multiSelectable = true
@@ -203,8 +204,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.render()
     }
     // 点击选中或者取消选中要素
-    if ([this.#singleSelectable, this.#multiSelectable].includes(true)) {
+    if (this.#singleSelectable === true) {
       this.#selectSingleOn = map.on('singleclick', this.#onSingleSelect.bind(this))
+    }
+    if (this.#multiSelectable === true) {
+      this.#selectMultiOn = map.on('singleclick', this.#onMultiSelect.bind(this))
     }
     // 设置鼠标样式
     const debounceOnPointerMove = debounce(this.#onPointerMove.bind(this), 50)
@@ -558,15 +562,24 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.disableModify()
     }
     this.selectedStyle = style
-    if (this.#selectSingleOn) return true
-    this.#selectSingleOn = this.#map!.on('singleclick', this.#onSingleSelect.bind(this))
+    this.disableSelect()
+    if (this.#singleSelectable) {
+      this.#selectSingleOn = this.#map!.on('singleclick', this.#onSingleSelect.bind(this))
+      return true
+    }
+    if (this.#multiSelectable) {
+      this.#selectMultiOn = this.#map!.on('singleclick', this.#onMultiSelect.bind(this))
+      return true
+    }
     return true
   }
 
   disableSelect(): boolean {
     unByKey(this.#selectSingleOn!)
+    unByKey(this.#selectMultiOn!)
     // TODO 恢复未选中的样式
     this.#selectSingleOn = null
+    this.#selectMultiOn = null
     return true
   }
 
@@ -894,20 +907,42 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       return
     }
     const hitFeature = (f: Feature<Geometry>) => {
-      if (!f) return
       const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
-      if (this.#singleSelectable) {
-        // 点击的要素没有被选中，就选中
-        this.#selected.clear()
-        if (!feat) {
-          this.#selected.push(f)
-        }
+      this.#selected.clear()
+      if (!feat) {
+        // 没有选中
+        this.#selected.push(f)
+      }
+    }
+    this.#map!.forEachFeatureAtPixel(
+      e.pixel,
+      f => {
+        hitFeature(f as Feature)
+      },
+      {
+        layerFilter: layer => {
+          return layer === this.#layer
+        },
+      },
+    )
+  }
+  #onMultiSelect(e: MapBrowserEvent<MouseEvent>) {
+    const features = this.#source.getFeatures()
+    if (features.length === 0) return
+    const hasFeature = this.#map!.hasFeatureAtPixel(e.pixel)
+    if (!hasFeature) {
+      // 点到非要素区域，取消所有选中
+      this.#selected.clear()
+      return
+    }
+    const hitFeature = (f: Feature<Geometry>) => {
+      const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
+      if (feat) {
+        // 已经选中
+        this.#selected.remove(feat)
       } else {
-        if (feat) {
-          this.#selected.remove(feat)
-        } else {
-          this.#selected.push(f)
-        }
+        // 没有选中
+        this.#selected.push(f)
       }
     }
     this.#map!.forEachFeatureAtPixel(
@@ -924,7 +959,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #onPointerMove(evt: MapBrowserEvent<MouseEvent>) {
-    if (evt.dragging || !this.#selectSingleOn) {
+    if (evt.dragging || (!this.#selectSingleOn && !this.#selectMultiOn)) {
       return
     }
     const map = evt.map!
