@@ -66,7 +66,7 @@ const layerStyle = {
 
 const olDraw = new GeomEditor(map, {
   layerStyle,
-  //selectedStyle: false,
+  selectedStyle: false,
 })
 
 olDraw.on('select', event => {

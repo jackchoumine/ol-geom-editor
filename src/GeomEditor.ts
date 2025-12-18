@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 15:30:34
+ * @LastEditTime: 2025-12-18 16:32:55
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -120,8 +120,9 @@ type GeomEditorOptions = {
   className?: string
   /**
    * 选中的要素样式
+   * 为 false 不支持选中。可手动使用 enableSelect 开启选中
    */
-  selectedStyle?: StyleLike
+  selectedStyle?: StyleLike | boolean
 }
 
 const highlightStyle = new Style({
@@ -200,7 +201,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.render()
     }
     // 点击选中或者取消选中要素
-    this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
+    if (this.#singleSelectable) {
+      this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
+    }
     // 设置鼠标样式
     const debounceOnPointerMove = debounce(this.#onPointerMove.bind(this), 50)
     map.on('pointermove', debounceOnPointerMove)
@@ -846,8 +849,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   #initOptions(options: GeomEditorOptions) {
     const { layerStyle, selectedStyle } = options
-    if (selectedStyle) {
+    if (typeof selectedStyle === 'object' && selectedStyle !== null) {
       this.selectedStyle = selectedStyle
+    } else if (selectedStyle !== false) {
+      this.#singleSelectable = true
     }
     const z = zIndex + 1
     this.#layer = new VectorLayer({
@@ -927,7 +932,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #onPointerMove(evt: MapBrowserEvent<MouseEvent>) {
-    if (evt.dragging || !this.#selectOn) {
+    if (evt.dragging) {
       return
     }
     const map = evt.map!
