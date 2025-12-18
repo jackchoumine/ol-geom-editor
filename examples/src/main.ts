@@ -57,7 +57,7 @@ const map = new Map({
 const layerStyle = {
   'fill-color': 'rgba(255,255,255,0.4)',
   'stroke-color': '#3399CC',
-  'stroke-width': 1.25,
+  'stroke-width': 5,
   'circle-radius': 50,
   'circle-fill-color': 'rgba(255,255,255,0.4)',
   'circle-stroke-width': 1.25,
@@ -97,7 +97,7 @@ olDraw.on('deselect', event => {
   const { deselected: features } = event
   features.forEach(f => {
     const type = f.getGeometry().getType()
-    f.setStyle(modifyEndGeomStyle[type])
+    //f.setStyle(modifyEndGeomStyle[type])
   })
 })
 olDraw.on('drawstart', event => {
@@ -211,6 +211,7 @@ function addJSON() {
 function addJSONObj() {
   console.log('addJSONObj')
   const feat1 = olDraw.addFeatureFromJSON(geoJSONObj)
+  feat1.setStyle(modifyEndGeomStyle['Polygon'])
   const feat2 = olDraw.addFeatureFromJSON(circle)
   console.log({ feat2, feat1 })
 }

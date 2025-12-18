@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 19:00:45
+ * @LastEditTime: 2025-12-18 19:37:18
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -150,6 +150,7 @@ const ACTION_TITLE = {
   modify: 'modify geometry',
   complete: 'complete edit geometry',
 }
+const originalStyleKey = 'ORIGINAL_STYLE_OGE'
 class GeomEditor extends BaseObject implements GeomEditorI {
   #source: VectorSource<Geometry> = new VectorSource()
   #layer: VectorLayer<VectorSource<Geometry>> | null = null
@@ -881,9 +882,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     const hasFeature = this.#map!.hasFeatureAtPixel(e.pixel)
     if (!hasFeature) {
       // 点到非要素区域，取消所有选中
-      this.#selected.forEach(feat => {
-        feat.setStyle(undefined)
-      })
+      //this.#selected.forEach(feat => {
+      //  feat.setStyle(undefined)
+      //})
       this.#selected.clear()
       return
     }
@@ -892,21 +893,14 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
       if (this.#singleSelectable) {
         // 点击的要素没有被选中，就选中
-        this.#selected.forEach(feat => {
-          feat.setStyle(undefined)
-        })
         this.#selected.clear()
         if (!feat) {
-          // NOTE 先设置选中样式，后加入集合，再触发事件，方便外部再次设置样式
-          f.setStyle(this.selectedStyle)
           this.#selected.push(f)
         }
       } else {
         if (feat) {
-          f.setStyle(undefined)
           this.#selected.remove(feat)
         } else {
-          f.setStyle(this.selectedStyle)
           this.#selected.push(f)
         }
       }
@@ -971,9 +965,15 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #onSelectedChange() {
     const add = (e: CollectionEvent<Feature<Geometry>>) => {
       const feature = e.element
+      // 先保存原本样式
+      const originalStyle = feature.getStyle()
+      feature.set(originalStyleKey, originalStyle)
+      // 后设置选中样式
+      feature.setStyle(this.selectedStyle)
       const feats = this.#selected.getArray()
       const [selectData] = this.#convertFeaturesToData([feature])
       const dataArray = this.#convertFeaturesToData(feats)
+      // 最后触发事件，保证外部可在 select 事件处理器中修改样式
       this.dispatchEvent(
         new GeomEditorSelectEvent(GeomEditorEventType.SELECT, dataArray, selectData, feats, []),
       )
@@ -986,7 +986,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const selectedFeatures = this.#selected.getArray()
       const deselectArray = this.#convertFeaturesToData([feature])
       const deselectFeatures = [feature]
-
+      // 先恢复样式
+      const originalStyle = feature.get(originalStyleKey)
+      feature.setStyle(originalStyle)
+      // 才触发事件，保证外部可在 deselect 事件处理器中修改样式
       this.dispatchEvent(
         new GeomEditorDeselectEvent(
           GeomEditorEventType.DESELECT,
