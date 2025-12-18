@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-10-23 10:57:42
+ * @LastEditTime: 2025-12-18 15:30:34
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -899,16 +899,17 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         })
         this.#selected.clear()
         if (!feat) {
-          this.#selected.push(f)
+          // NOTE 先设置选中样式，后加入集合，再触发事件，方便外部再次设置样式
           f.setStyle(this.selectedStyle)
+          this.#selected.push(f)
         }
       } else {
         if (feat) {
-          this.#selected.remove(feat)
           f.setStyle(undefined)
+          this.#selected.remove(feat)
         } else {
-          this.#selected.push(f)
           f.setStyle(this.selectedStyle)
+          this.#selected.push(f)
         }
       }
     }
