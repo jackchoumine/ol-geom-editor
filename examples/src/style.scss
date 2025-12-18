@@ -37,10 +37,16 @@ body {
       height: 32px;
       border-radius: 4px;
     }
+    //.draw {
+    //  display: flex;
+    //  justify-content: flex-start;
+    //  align-items: center;
+    //}
     .draw {
       display: flex;
+      flex-direction: column;
       justify-content: flex-start;
-      align-items: center;
+      align-items: start;
     }
   }
 }
