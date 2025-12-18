@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 21:26:32
+ * @LastEditTime: 2025-12-18 21:34:00
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -740,6 +740,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   removeAllFeatures() {
     this.#source.clear()
     this.#selected.clear()
+    this.disableModify()
+    this.disableTranslate()
+    this.disableSelect()
+    this.disableSnap()
     // TODO 抛出事件
     return Promise.resolve(true)
   }
