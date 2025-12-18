@@ -97,7 +97,7 @@ olDraw.on('deselect', event => {
   const { deselected: features } = event
   features.forEach(f => {
     const type = f.getGeometry().getType()
-    f.setStyle(modifyEndGeomStyle[type])
+    //f.setStyle(modifyEndGeomStyle[type])
   })
 })
 olDraw.on('drawstart', event => {
