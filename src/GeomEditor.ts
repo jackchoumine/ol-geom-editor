@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 18:59:43
+ * @LastEditTime: 2025-12-18 19:00:45
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -58,9 +58,7 @@ import {
 } from './GeomEditorI'
 import {
   angularDistanceDeg,
-  angularDistanceDeg_haversine,
   debounce,
-  distanceMetersToDegrees,
   genId,
   getWKTType,
   isGeoJSON,
@@ -69,9 +67,9 @@ import {
   normalizePadding,
 } from './utils'
 
-const earth_radius = 6371008.8 as const
+// const earth_radius = 6371008.8 as const
 
-//import type { GeometryFunction } from 'ol/style/Style'
+// import type { GeometryFunction } from 'ol/style/Style'
 const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
 
 const DEFAULT_GEOM_TYPES: GeomType[] = ['Point', 'LineString', 'Polygon', 'Circle']
@@ -609,7 +607,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     return true
   }
 
-  disableTranslate(id?: Id): boolean {
+  disableTranslate(): boolean {
     this.enableMover = false
     this.#setSelectedBtn('translate', false)
     if (!this.#translator) return true
@@ -667,7 +665,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.enableSnap()
   }
 
-  disableModify(id?: Id | Id[], style?: StyleLike): boolean {
+  disableModify(): boolean {
     this.disableSnap()
     this.enableModifier = false
     if (this.showToolBar) {
