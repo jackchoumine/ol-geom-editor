@@ -476,8 +476,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   // 选择要素
   select(id: Id | Id[], options?: SelectOptions): Feature[] {
     if (!this.#canSelect()) this.enableSelect()
-    const style = options?.selectedStyle
     const each = options?.eachFeature
+    let style = this.selectedStyle
+    if (options?.selectedStyle) {
+      style = options?.selectedStyle
+    }
     let _fit = true
     if (options?.fit === false) {
       _fit = false

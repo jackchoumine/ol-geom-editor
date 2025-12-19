@@ -129,7 +129,7 @@ export type SelectOptions = {
   /**
    * 选中的要素样式
    */
-  selectedStyle?: Style | StyleLike | FlatStyle
+  selectedStyle?: StyleLike
   /**
    * 遍历找到的要素
    * 返回 truthy，停止遍历
