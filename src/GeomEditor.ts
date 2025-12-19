@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 15:22:57
+ * @LastEditTime: 2025-12-19 15:31:37
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -779,7 +779,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
   hasSelected(id: Id) {
     if (this.#selected.getLength() === 0) return false
-    return !!this.#selected.getArray().find(f => f.getId() === id)
+    return this.#selected.getArray().some(f => f.getId() === id)
   }
   protected render() {
     this.#renderToolBar()
