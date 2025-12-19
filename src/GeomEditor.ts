@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 12:34:36
+ * @LastEditTime: 2025-12-19 14:50:56
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -766,10 +766,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
    * 编辑完毕
    */
   completeEdit(): void {
-    this.#selected.forEach(f => {
-      f.setStyle(undefined)
-    })
     this.#selected.clear()
+    this.disableSelect()
     this.disableDraw()
     this.disableFreehand()
     this.disableModify()
