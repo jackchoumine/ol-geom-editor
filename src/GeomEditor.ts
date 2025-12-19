@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 12:03:29
+ * @LastEditTime: 2025-12-19 12:11:25
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -479,7 +479,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     const each = options?.eachFeature
     let style = this.selectedStyle
     if (options?.selectedStyle) {
-      style = options?.selectedStyle
+      style = options.selectedStyle
     }
     let _fit = true
     if (options?.fit === false) {
