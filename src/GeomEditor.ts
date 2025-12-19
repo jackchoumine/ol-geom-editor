@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 15:20:09
+ * @LastEditTime: 2025-12-19 15:22:57
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -996,12 +996,6 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #onSourceChange() {
-    // 修改现有的要素
-    this.#source.on('changefeature', () => {
-      //console.log('changefeature')
-      // this.#enableBtn('complete', true, TITLE_MAP['complete'])
-    })
-
     // 添加新要素
     let hasFeature = false
     const onAddFeature = () => {
