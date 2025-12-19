@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 12:11:25
+ * @LastEditTime: 2025-12-19 12:13:38
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -931,10 +931,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       return
     }
     const hitFeature = (f: Feature<Geometry>) => {
-      const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
+      const hasSelected = this.hasSelected(f.getId()!)
       this.#selected.clear()
-      if (!feat) {
-        // 没有选中
+      if (!hasSelected) {
         this.#selected.push(f)
       }
     }
@@ -960,10 +959,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       return
     }
     const hitFeature = (f: Feature<Geometry>) => {
-      const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
-      if (feat) {
+      const hasSelected = this.hasSelected(f.getId()!)
+      if (hasSelected) {
         // 已经选中
-        this.#selected.remove(feat)
+        this.#selected.remove(f)
       } else {
         // 没有选中
         this.#selected.push(f)
