@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 14:50:56
+ * @LastEditTime: 2025-12-19 15:20:09
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -987,8 +987,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     // 获取当前鼠标位置的像素坐标
     const pixel = map.getEventPixel(evt.originalEvent)
     // 检查当前位置是否有要素
-    // FIXME 要在当前图层中的要素才改变鼠标样式
-    const hit = map.hasFeatureAtPixel(pixel)
+    const hit = map.hasFeatureAtPixel(pixel, {
+      layerFilter: layer => {
+        return layer === this.#layer
+      },
+    })
     map.getTargetElement().style.cursor = hit ? 'pointer' : ''
   }
 
