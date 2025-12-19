@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 16:32:55
+ * @LastEditTime: 2025-12-18 21:34:00
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -52,15 +52,13 @@ import {
   type GeometryWKT,
   type Id,
   type ProjCode,
-  type SelectModeOptions,
+  type SelectMode,
   type SelectOptions,
   buttons,
 } from './GeomEditorI'
 import {
   angularDistanceDeg,
-  angularDistanceDeg_haversine,
   debounce,
-  distanceMetersToDegrees,
   genId,
   getWKTType,
   isGeoJSON,
@@ -69,9 +67,9 @@ import {
   normalizePadding,
 } from './utils'
 
-const earth_radius = 6371008.8 as const
+// const earth_radius = 6371008.8 as const
 
-//import type { GeometryFunction } from 'ol/style/Style'
+// import type { GeometryFunction } from 'ol/style/Style'
 const DEFAULT_ACTIONS = ['remove', 'modify', 'translate', 'complete'] as const
 
 const DEFAULT_GEOM_TYPES: GeomType[] = ['Point', 'LineString', 'Polygon', 'Circle']
@@ -119,10 +117,13 @@ type GeomEditorOptions = {
    */
   className?: string
   /**
-   * 选中的要素样式
-   * 为 false 不支持选中。可手动使用 enableSelect 开启选中
+   * 选中模式
    */
-  selectedStyle?: StyleLike | boolean
+  selectMode?: SelectMode
+  /**
+   * 选中时的样式
+   */
+  selectedStyle?: StyleLike
 }
 
 const highlightStyle = new Style({
@@ -153,6 +154,7 @@ const ACTION_TITLE = {
   modify: 'modify geometry',
   complete: 'complete edit geometry',
 }
+const originalStyleKey = 'ORIGINAL_STYLE_OGE'
 class GeomEditor extends BaseObject implements GeomEditorI {
   #source: VectorSource<Geometry> = new VectorSource()
   #layer: VectorLayer<VectorSource<Geometry>> | null = null
@@ -168,7 +170,8 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #drawingType: GeomType = 'None'
   #drawEndOn: EventsKey | null = null
   #drawStartOn: EventsKey | null = null
-  #selectOn: EventsKey | null = null
+  #selectSingleOn: EventsKey | null = null
+  #selectMultiOn: EventsKey | null = null
 
   #boxSelectable = false
   #multiSelectable = true
@@ -201,8 +204,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.render()
     }
     // 点击选中或者取消选中要素
-    if (this.#singleSelectable) {
-      this.#selectOn = map.on('singleclick', this.#whenSingleClick.bind(this))
+    if (this.#singleSelectable === true) {
+      this.#selectSingleOn = map.on('singleclick', this.#onSingleSelect.bind(this))
+    }
+    if (this.#multiSelectable === true) {
+      this.#selectMultiOn = map.on('singleclick', this.#onMultiSelect.bind(this))
     }
     // 设置鼠标样式
     const debounceOnPointerMove = debounce(this.#onPointerMove.bind(this), 50)
@@ -464,7 +470,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   // 选择要素
   select(id: Id | Id[], options?: SelectOptions): Feature[] {
-    if (!this.#selectOn) return []
+    if (!this.#selectSingleOn) return []
     const style = options?.selectedStyle
     const each = options?.eachFeature
     let _fit = true
@@ -518,7 +524,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   deselect(id: Id | Id[], options?: DeselectOptions): void {
-    // if (!this.#selectOn) return
+    // if (!this.#selectSingleOn) return
     const style = options?.deselectStyle
     const each = options?.eachFeature
     const arr = []
@@ -548,43 +554,39 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     })
   }
 
-  enableSelect(
-    options: SelectModeOptions = {
-      multi: true,
-      box: false,
-      single: false,
-    },
-  ): boolean {
+  enableSelect(mode: SelectMode = 'multi', style: Style | StyleLike = highlightStyle): boolean {
     this.disableDraw()
-    this.#singleSelectable = options?.single === true // 默认关闭单选
-    this.#boxSelectable = options?.box === true // 默认关闭框选
-    this.#multiSelectable = options?.multi !== false // 默认开启多选
-    if (this.#singleSelectable) {
-      this.#multiSelectable = false
-      this.#boxSelectable = false
-    }
+    this.#calcSelectMode(mode)
     if (this.#multiSelectable || this.#boxSelectable) {
       // 有多选，禁用编辑
       this.disableModify()
     }
-    if (this.#selectOn) return true
-    this.#selectOn = this.#map!.on('singleclick', this.#whenSingleClick.bind(this))
+    this.selectedStyle = style
+    this.disableSelect()
+    if (this.#singleSelectable) {
+      this.#selectSingleOn = this.#map!.on('singleclick', this.#onSingleSelect.bind(this))
+      return true
+    }
+    if (this.#multiSelectable) {
+      this.#selectMultiOn = this.#map!.on('singleclick', this.#onMultiSelect.bind(this))
+      return true
+    }
     return true
   }
 
   disableSelect(): boolean {
-    unByKey(this.#selectOn!)
+    unByKey(this.#selectSingleOn!)
+    unByKey(this.#selectMultiOn!)
     // TODO 恢复未选中的样式
-    this.#selectOn = null
+    this.#selectSingleOn = null
+    this.#selectMultiOn = null
     return true
   }
 
   // 平移要素
-  enableTranslate(id?: Id): boolean {
+  enableTranslate(): boolean {
     // 先启用多选
-    this.enableSelect({
-      multi: true,
-    })
+    this.enableSelect('multi')
     this.enableMover = true
     // 禁用修改和绘制
     this.disableModify()
@@ -612,7 +614,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     return true
   }
 
-  disableTranslate(id?: Id): boolean {
+  disableTranslate(): boolean {
     this.enableMover = false
     this.#setSelectedBtn('translate', false)
     if (!this.#translator) return true
@@ -632,9 +634,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
    */
   enableModify(style?: Style | StyleLike | FlatStyle) {
     // 编辑时一般都是先选中要素，再修改，需单选
-    this.enableSelect({
-      single: true,
-    })
+    this.enableSelect('single')
     this.disableTranslate()
     this.disableDraw()
     this.disableFreehand()
@@ -670,7 +670,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.enableSnap()
   }
 
-  disableModify(id?: Id | Id[], style?: StyleLike): boolean {
+  disableModify(): boolean {
     this.disableSnap()
     this.enableModifier = false
     if (this.showToolBar) {
@@ -740,6 +740,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   removeAllFeatures() {
     this.#source.clear()
     this.#selected.clear()
+    this.disableModify()
+    this.disableTranslate()
+    this.disableSelect()
+    this.disableSnap()
     // TODO 抛出事件
     return Promise.resolve(true)
   }
@@ -848,12 +852,11 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #initOptions(options: GeomEditorOptions) {
-    const { layerStyle, selectedStyle } = options
-    if (typeof selectedStyle === 'object' && selectedStyle !== null) {
+    const { layerStyle, selectedStyle, selectMode } = options
+    if (selectedStyle) {
       this.selectedStyle = selectedStyle
-    } else if (selectedStyle !== false) {
-      this.#singleSelectable = true
     }
+    this.#calcSelectMode(selectMode!)
     const z = zIndex + 1
     this.#layer = new VectorLayer({
       zIndex: z,
@@ -882,40 +885,68 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     this.allButtons = [..._types, ..._actions]
   }
 
-  #whenSingleClick(e: MapBrowserEvent<MouseEvent>) {
+  #calcSelectMode(selectMode: SelectMode) {
+    if ('none' === selectMode || selectMode == null) {
+      this.#singleSelectable = false
+      this.#multiSelectable = false
+      this.#boxSelectable = false
+    } else if (['all', 'multi'].includes(selectMode)) {
+      this.#multiSelectable = true
+      this.#boxSelectable = true
+      this.#singleSelectable = false
+    } else if (selectMode === 'single') {
+      this.#singleSelectable = true
+      this.#multiSelectable = false
+      this.#boxSelectable = false
+    }
+  }
+
+  #onSingleSelect(e: MapBrowserEvent<MouseEvent>) {
     const features = this.#source.getFeatures()
     if (features.length === 0) return
     const hasFeature = this.#map!.hasFeatureAtPixel(e.pixel)
     if (!hasFeature) {
       // 点到非要素区域，取消所有选中
-      this.#selected.forEach(feat => {
-        feat.setStyle(undefined)
-      })
       this.#selected.clear()
       return
     }
     const hitFeature = (f: Feature<Geometry>) => {
-      if (!f) return
       const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
-      if (this.#singleSelectable) {
-        // 点击的要素没有被选中，就选中
-        this.#selected.forEach(feat => {
-          feat.setStyle(undefined)
-        })
-        this.#selected.clear()
-        if (!feat) {
-          // NOTE 先设置选中样式，后加入集合，再触发事件，方便外部再次设置样式
-          f.setStyle(this.selectedStyle)
-          this.#selected.push(f)
-        }
+      this.#selected.clear()
+      if (!feat) {
+        // 没有选中
+        this.#selected.push(f)
+      }
+    }
+    this.#map!.forEachFeatureAtPixel(
+      e.pixel,
+      f => {
+        hitFeature(f as Feature)
+      },
+      {
+        layerFilter: layer => {
+          return layer === this.#layer
+        },
+      },
+    )
+  }
+  #onMultiSelect(e: MapBrowserEvent<MouseEvent>) {
+    const features = this.#source.getFeatures()
+    if (features.length === 0) return
+    const hasFeature = this.#map!.hasFeatureAtPixel(e.pixel)
+    if (!hasFeature) {
+      // 点到非要素区域，取消所有选中
+      this.#selected.clear()
+      return
+    }
+    const hitFeature = (f: Feature<Geometry>) => {
+      const feat = this.#selected.getArray().find(feat => feat.getId() === f.getId())
+      if (feat) {
+        // 已经选中
+        this.#selected.remove(feat)
       } else {
-        if (feat) {
-          f.setStyle(undefined)
-          this.#selected.remove(feat)
-        } else {
-          f.setStyle(this.selectedStyle)
-          this.#selected.push(f)
-        }
+        // 没有选中
+        this.#selected.push(f)
       }
     }
     this.#map!.forEachFeatureAtPixel(
@@ -932,7 +963,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   }
 
   #onPointerMove(evt: MapBrowserEvent<MouseEvent>) {
-    if (evt.dragging) {
+    if (evt.dragging || (!this.#selectSingleOn && !this.#selectMultiOn)) {
       return
     }
     const map = evt.map!
@@ -978,9 +1009,15 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   #onSelectedChange() {
     const add = (e: CollectionEvent<Feature<Geometry>>) => {
       const feature = e.element
+      // 先保存原本样式
+      const originalStyle = feature.getStyle()
+      feature.set(originalStyleKey, originalStyle)
+      // 后设置选中样式
+      feature.setStyle(this.selectedStyle)
       const feats = this.#selected.getArray()
       const [selectData] = this.#convertFeaturesToData([feature])
       const dataArray = this.#convertFeaturesToData(feats)
+      // 最后触发事件，保证外部可在 select 事件处理器中修改样式
       this.dispatchEvent(
         new GeomEditorSelectEvent(GeomEditorEventType.SELECT, dataArray, selectData, feats, []),
       )
@@ -993,7 +1030,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       const selectedFeatures = this.#selected.getArray()
       const deselectArray = this.#convertFeaturesToData([feature])
       const deselectFeatures = [feature]
-
+      // 先恢复样式
+      const originalStyle = feature.get(originalStyleKey)
+      feature.setStyle(originalStyle)
+      // 才触发事件，保证外部可在 deselect 事件处理器中修改样式
       this.dispatchEvent(
         new GeomEditorDeselectEvent(
           GeomEditorEventType.DESELECT,

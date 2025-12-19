@@ -4,9 +4,7 @@
   "scripts": {
     "dev": "vite --open",
     "build": "vite build --outDir ../docs --base ./",
-    "preview": "vite preview --outDir ../docs",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "preview": "vite preview --outDir ../docs"
   },
   "devDependencies": {
     "sass": "^1.93.0",

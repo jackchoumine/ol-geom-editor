@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-10-23 10:56:07
+ * @LastEditTime: 2025-12-18 20:47:28
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -14,6 +14,8 @@ import type Style from 'ol/style/Style'
 import type { FlatStyle } from 'ol/style/flat'
 
 import type { GeoJSON } from 'geojson'
+
+export type SelectMode = 'single' | 'multi' | 'box' | 'all' | 'none'
 
 export type ProjCode = `EPSG:${number}`
 
@@ -173,7 +175,7 @@ export type SelectModeOptions = {
   /**
    * 选中时的样式
    */
-  style?: Style | StyleLike | FlatStyle
+  style?: Style | StyleLike // | FlatStyle
 }
 
 /**
@@ -231,7 +233,7 @@ export abstract class GeomEditorI {
   abstract select(id: Id | Id[], options?: SelectOptions): Feature[]
 
   /**
-   * 移除选中的要素
+   * 取消选中的要素
    * @param id 要素 Id 数组 或者 Id
    * @param options 配置对象
    */
@@ -241,7 +243,13 @@ export abstract class GeomEditorI {
    * 选中要素
    * @param options 配置对象
    */
-  abstract enableSelect(options?: SelectModeOptions): boolean
+  abstract enableSelect(
+    mode?: SelectMode,
+    /**
+     * 选中时的样式
+     */
+    style?: Style | StyleLike,
+  ): boolean
 
   /**
    * 禁用选中的要素
@@ -258,12 +266,10 @@ export abstract class GeomEditorI {
   abstract enableModify(style?: StyleLike | FlatStyle): void
 
   /**
-   * 禁用修改，禁用后要素不可修改，触发 'modifyDisable' 事件
+   * 禁用修改，禁用后要素不可修改
    * // NOTE 修改期间修改要素，会触发 modifyend 和 modifystart
-   * @param id 单个 id 或者 id 数组
-   * @param style 禁用编辑后的样式，不提供，恢复到启用修改的样式
    */
-  abstract disableModify(id?: Id | Id[], style?: StyleLike): boolean
+  abstract disableModify(): boolean
   /**
    *  启用捕获
    */
@@ -277,13 +283,13 @@ export abstract class GeomEditorI {
    * 启用平移
    * @param id 要素 id
    */
-  abstract enableTranslate(id?: Id): boolean
+  abstract enableTranslate(): boolean
 
   /**
    * 禁用平移
    * @param id 要素 id
    */
-  abstract disableTranslate(id?: Id): boolean
+  abstract disableTranslate(): boolean
 
   /**
    * 移除要素 成功移除后返回 true
