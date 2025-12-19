@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 20:47:28
+ * @LastEditTime: 2025-12-19 11:46:56
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -258,7 +258,10 @@ export abstract class GeomEditorI {
    * @returns 是否禁用成功
    */
   abstract disableSelect(idsOrFeatures?: Id[] | Feature[], force?: boolean): boolean
-
+  /**
+   * 检查是否已经选中
+   */
+  abstract hasSelected(id: Id): boolean
   /**
    * 开启修改 启用后要素可修改
    * @param style 启用修改后的样式，告知用户处在修改状态

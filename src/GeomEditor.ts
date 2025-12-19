@@ -2,7 +2,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-18 21:34:00
+ * @LastEditTime: 2025-12-19 12:03:29
  * @Description : GeomEditor 类
  */
 import type { Map, MapBrowserEvent, View } from 'ol'
@@ -163,20 +163,25 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   readonly #view: View | null = null
   readonly #dataProj: ProjCode = 'EPSG:4326'
   readonly #mapProj: ProjCode = 'EPSG:3857'
+
   #drawer: Draw | null = null
-  #modifier: Modify | null = null
-  #snap: Snap | null = null
-  #translator: Translate | null = null
+  // 自由绘制
   #drawingType: GeomType = 'None'
   #drawEndOn: EventsKey | null = null
   #drawStartOn: EventsKey | null = null
+  #canFreehand = false
+
+  // 编辑
+  #modifier: Modify | null = null
+  #snap: Snap | null = null
+  #translator: Translate | null = null
+
+  // 选择
   #selectSingleOn: EventsKey | null = null
   #selectMultiOn: EventsKey | null = null
-
   #boxSelectable = false
   #multiSelectable = true
   #singleSelectable = false
-  #canFreehand = false
 
   protected supportFreehand: boolean = true
   protected showToolBar: boolean = true
@@ -470,7 +475,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
 
   // 选择要素
   select(id: Id | Id[], options?: SelectOptions): Feature[] {
-    if (!this.#selectSingleOn) return []
+    if (!this.#canSelect()) this.enableSelect()
     const style = options?.selectedStyle
     const each = options?.eachFeature
     let _fit = true
@@ -494,15 +499,21 @@ class GeomEditor extends BaseObject implements GeomEditorI {
         // @ts-ignore
         selected.push(feat)
         // @ts-ignore
-        this.#selected.push(feat)
         if (_fit) {
           // @ts-ignore
           const ex = feat.getGeometry()?.getExtent() as Extent
           extend(mergedExtent, ex)
         }
-        if (style) {
-          // @ts-ignore
-          feat.setStyle(style)
+        const hasSelected = this.hasSelected(id)
+        // 没有选中
+        if (!hasSelected) {
+          // NOTE 先加入选择，触发 select 事件
+          this.#selected.push(feat)
+          if (style) {
+            // NOTE 再设置样式。保证 select 样式优先级比默认选中样式高
+            // @ts-ignore
+            feat.setStyle(style)
+          }
         }
       }
       if (!stopEach && each && feat) {
@@ -577,7 +588,7 @@ class GeomEditor extends BaseObject implements GeomEditorI {
   disableSelect(): boolean {
     unByKey(this.#selectSingleOn!)
     unByKey(this.#selectMultiOn!)
-    // TODO 恢复未选中的样式
+    // 恢复未选中的样式
     this.#selectSingleOn = null
     this.#selectMultiOn = null
     return true
@@ -765,7 +776,10 @@ class GeomEditor extends BaseObject implements GeomEditorI {
     const completeEvent = new GeomEditorCompleteEvent(array, features)
     this.dispatchEvent(completeEvent)
   }
-
+  hasSelected(id: Id) {
+    if (this.#selected.getLength() === 0) return false
+    return !!this.#selected.getArray().find(f => f.getId() === id)
+  }
   protected render() {
     this.#renderToolBar()
     //this.#setupAutoRender()
@@ -899,6 +913,9 @@ class GeomEditor extends BaseObject implements GeomEditorI {
       this.#multiSelectable = false
       this.#boxSelectable = false
     }
+  }
+  #canSelect() {
+    return [this.#singleSelectable, this.#multiSelectable, this.#boxSelectable].includes(true)
   }
 
   #onSingleSelect(e: MapBrowserEvent<MouseEvent>) {
