@@ -64,9 +64,18 @@ const layerStyle = {
   'circle-stroke-color': '#3399CC',
 }
 
+const layerStyle2 = {
+  'fill-color': 'rgba(255,255,255, 0.3)', // 'rgba(255, 255, 255, 0.2)',
+  'stroke-color': '#00b4aa',
+  'stroke-width': 6,
+  'circle-radius': 6,
+  'circle-fill-color': '#00b4aa',
+}
+
 const olDraw = new GeomEditor(map, {
-  layerStyle,
-  selectedStyle: false,
+  // layerStyle,
+  layerStyle: layerStyle2,
+  // selectedStyle: false,
 })
 
 olDraw.on('select', event => {
