@@ -3,7 +3,7 @@
  * @Author      : ZhouQiJun
  * @Date        : 2025-09-08 01:37:38
  * @LastEditors : ZhouQiJun
- * @LastEditTime: 2025-12-19 11:46:56
+ * @LastEditTime: 2025-12-22 14:36:36
  * @Description : OlDraw 相关类型定义
  */
 import type { Feature } from 'ol'
@@ -37,6 +37,8 @@ export type FeatureOptions = {
   // */
   //extent?: number[]
   /**
+   * // TODO 移除
+   * 返回值可设置
    * 样式
    */
   style?: StyleLike
@@ -308,6 +310,7 @@ export abstract class GeomEditorI {
 
   /**
    * 完成编辑
+   * // TODO 重命名为 complete
    */
   abstract completeEdit(): void
 }
