@@ -205,8 +205,9 @@ export const geoJSONObj = {
     ],
   },
   properties: {
-    OGE_SELECTABLE: false,
+    //OGE_SELECTABLE: false,
   },
+  id: 'polygon',
 }
 
 export const pointJSON = JSON.stringify({

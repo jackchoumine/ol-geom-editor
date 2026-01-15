@@ -220,7 +220,7 @@ function addJSON() {
 function addJSONObj() {
   console.log('addJSONObj')
   const feat1 = olDraw.addFeatureFromJSON(geoJSONObj)
-  feat1.setStyle(modifyEndGeomStyle['Polygon'])
+  //feat1.setStyle(modifyEndGeomStyle['Polygon'])
   const feat2 = olDraw.addFeatureFromJSON(circle)
   console.log({ feat2, feat1 })
 }
@@ -243,21 +243,21 @@ const fillColor = 'rgba(218,228,194,0.5)'
 const strokeColor = 'rgba(255, 204, 51, 0.9)'
 
 function onSelect() {
-  const features = olDraw.select(['circle'], {
-    selectedStyle: new Style({
-      fill: new Fill({
-        color: fillColor,
-      }),
-      stroke: new Stroke({
-        color: strokeColor,
-        width: 4,
-      }),
-      image: new CircleStyle({
-        radius: 7,
-        fill: new Fill({ color: fillColor }),
-        stroke: new Stroke({ color: strokeColor, width: 2 }),
-      }),
-    }),
+  const features = olDraw.select('polygon', {
+    //selectedStyle: new Style({
+    //  fill: new Fill({
+    //    color: fillColor,
+    //  }),
+    //  stroke: new Stroke({
+    //    color: strokeColor,
+    //    width: 10,
+    //  }),
+    //  image: new CircleStyle({
+    //    radius: 7,
+    //    fill: new Fill({ color: fillColor }),
+    //    stroke: new Stroke({ color: strokeColor, width: 2 }),
+    //  }),
+    //}),
     eachFeature: (feat: Feature, index: number) => {
       console.log({ feat })
       if (index === 0) return true
