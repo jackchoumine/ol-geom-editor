@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>企业级 GIS 拓扑编辑器 - 方案二动态物理撞墙版</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css" />
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        font-family: 'Segoe UI', system-ui;
+      }
+      #map {
+        flex: 1;
+        background: #ecf0f1;
+      }
+      .toolbar {
+        padding: 15px 25px;
+        background: white;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+      .console {
+        height: 140px;
+        background: #1a1a1a;
+        color: #00ff41;
+        padding: 12px;
+        font-family: 'Consolas', monospace;
+        overflow-y: auto;
+        font-size: 12.5px;
+        border-top: 3px solid #333;
+      }
+      .btn {
+        padding: 9px 18px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.2s;
+      }
+      .btn-load {
+        background: #8e44ad;
+        color: white;
+      }
+      .btn-submit {
+        background: #27ae60;
+        color: white;
+      }
+      .btn:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+      }
+      .legend {
+        margin-left: auto;
+        display: flex;
+        gap: 20px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .color-box {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        border-radius: 3px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button class="btn btn-load" onclick="app.mockApiLoad()">📡 加载业务数据 (WKT)</button>
+      <button class="btn btn-submit" onclick="app.exportResult()">💾 提交 MultiPolygon</button>
+
+      <div class="legend">
+        <span
+          ><b class="color-box" style="background: rgba(241, 196, 15, 0.4); border: 2px solid #f1c40f"></b
+          >黄色：行政区 (物理墙，完全无法侵入)</span
+        >
+        <span
+          ><b class="color-box" style="background: rgba(52, 152, 219, 0.4); border: 2px solid #3498db"></b
+          >蓝色：业务区 (实时碰撞检测、覆盖自动销毁)</span
+        >
+      </div>
+    </div>
+
+    <div id="map"></div>
+    <div class="console" id="log"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsts@2.10.0/dist/jsts.min.js"></script>
+
+    <script>
+      /**
+       * JSTS 空间计算引擎
+       */
+      class TopologyEngine {
+        constructor() {
+          this.parser = new jsts.io.OL3Parser()
+          this.parser.inject(
+            ol.geom.Point,
+            ol.geom.LineString,
+            ol.geom.LinearRing,
+            ol.geom.Polygon,
+            ol.geom.MultiPoint,
+            ol.geom.MultiLineString,
+            ol.geom.MultiPolygon,
+          )
+        }
+
+        // 核心判定：目标几何体是否完全进入了障碍物内部
+        isTotallyInside(targetGeom, obstacles) {
+          if (!targetGeom) return false
+          try {
+            let jstsTarget = this.parser.read(targetGeom).buffer(0)
+            if (jstsTarget.isEmpty()) return false
+
+            for (let obs of obstacles) {
+              let jstsObs = this.parser.read(obs.getGeometry()).buffer(0)
+              // 如果当前多边形被行政区【完全包含】(Contains)，则判定为非法
+              if (jstsObs.contains(jstsTarget)) {
+                return true
+              }
+            }
+          } catch (e) {
+            console.error('碰撞判定异常', e)
+          }
+          return false
+        }
+      }
+
+      /**
+       * 数据转换工具
+       */
+      class DataHelper {
+        constructor() {
+          this.wkt = new ol.format.WKT()
+        }
+        deserialize(wkt) {
+          const feature = this.wkt.readFeature(wkt)
+          const geom = feature.getGeometry()
+          const geoms = geom instanceof ol.geom.MultiPolygon ? geom.getPolygons() : [geom]
+          return geoms.map(g => new ol.Feature(g))
+        }
+        serialize(features) {
+          const coords = features.map(f => f.getGeometry().getCoordinates())
+          return this.wkt.writeGeometry(new ol.geom.MultiPolygon(coords))
+        }
+      }
+
+      /**
+       * 应用主逻辑
+       */
+      class App {
+        constructor() {
+          this.engine = new TopologyEngine()
+          this.helper = new DataHelper()
+
+          this.adminSource = new ol.source.Vector()
+          this.bizSource = new ol.source.Vector()
+
+          // 用于存储正在被改变的要素的上次健康几何镜像
+          this.lastHealthyGeometry = null
+          this.changeListenerKey = null
+
+          this.initMap()
+          this.initInteractions()
+          this.loadAdminBoundaries()
+        }
+
+        initMap() {
+          this.map = new ol.Map({
+            target: 'map',
+            layers: [
+              new ol.layer.Tile({ source: new ol.source.OSM() }),
+              new ol.layer.Vector({
+                source: this.adminSource,
+                style: new ol.style.Style({
+                  fill: new ol.style.Fill({ color: 'rgba(241, 196, 15, 0.4)' }),
+                  stroke: new ol.style.Stroke({ color: '#f1c40f', width: 3 }),
+                }),
+              }),
+              new ol.layer.Vector({
+                source: this.bizSource,
+                style: new ol.style.Style({
+                  fill: new ol.style.Fill({ color: 'rgba(52, 152, 219, 0.4)' }),
+                  stroke: new ol.style.Stroke({ color: '#2980b9', width: 2 }),
+                }),
+              }),
+            ],
+            view: new ol.View({ center: [116.4, 39.9], projection: 'EPSG:4326', zoom: 12 }),
+          })
+        }
+
+        initInteractions() {
+          // 1. Select 网关
+          this.select = new ol.interaction.Select({
+            condition: ol.events.condition.click,
+            layers: layer => layer.getSource() === this.bizSource,
+          })
+
+          // 2. Modify 工具
+          this.modify = new ol.interaction.Modify({
+            source: this.bizSource,
+            features: this.select.getFeatures(),
+          })
+
+          // 3. Draw 工具
+          this.draw = new ol.interaction.Draw({
+            source: this.bizSource,
+            type: 'Polygon',
+          })
+
+          this.map.addInteraction(this.select)
+          this.map.addInteraction(this.modify)
+          this.map.addInteraction(this.draw)
+
+          // ==================== 🛠️ 方案二核心：修改中的实时阻挡逻辑 ====================
+
+          // 当修改开始时，捕获当前要素状态作为“初始健康基因”
+          this.modify.on('modifystart', e => {
+            const features = e.features.getArray()
+            if (features.length > 0) {
+              const targetFeature = features[0]
+              // 深度克隆健康的几何，存入内存
+              this.lastHealthyGeometry = targetFeature.getGeometry().clone()
+
+              // 监听几何图形在鼠标拖拽期间的每一个微小变化
+              this.changeListenerKey = targetFeature.getGeometry().on('change', evt => {
+                const currentGeom = evt.target
+                const admins = this.adminSource.getFeatures()
+
+                // 实时计算：如果发现当前拖拽后的图形完全陷进了行政区内部
+                if (this.engine.isTotallyInside(currentGeom, admins)) {
+                  // 触发物理防护壁垒：强行回滚到上一帧健康的几何体状态！
+                  targetFeature.setGeometry(this.lastHealthyGeometry.clone())
+                  this.log('🛡️ 物理撞墙防御：禁止将要素移入行政区内部！拖拽已被强行卡住。', '#e67e22')
+                } else {
+                  // 如果只是正常拖动、没有完全沦陷，则不断把当前的合法状态更新为新的健康存档
+                  this.lastHealthyGeometry = currentGeom.clone()
+                }
+              })
+            }
+          })
+
+          // 修改结束时，解绑 change 监听，执行邻居裁剪和覆盖自动销毁
+          this.modify.on('modifyend', e => {
+            if (this.changeListenerKey) {
+              ol.Observable.unByKey(this.changeListenerKey) // 注销实时监听
+              this.changeListenerKey = null
+            }
+            e.features.forEach(f => this.runPostTopology(f, false))
+          })
+
+          // ==================== 🛠️ 方案二核心：绘制中的实时阻挡逻辑 ====================
+
+          this.draw.on('drawstart', e => {
+            const drawFeature = e.feature
+            this.lastHealthyGeometry = null
+
+            this.changeListenerKey = drawFeature.getGeometry().on('change', evt => {
+              const currentGeom = evt.target
+              const admins = this.adminSource.getFeatures()
+
+              if (this.engine.isTotallyInside(currentGeom, admins)) {
+                if (this.lastHealthyGeometry) {
+                  // 如果有上一步的合法快照，回滚到那一步（阻止继续往行政区内部画点）
+                  drawFeature.setGeometry(this.lastHealthyGeometry.clone())
+                } else {
+                  // 如果刚画第一个点就落在了行政区里，直接把坐标重置为空，强制不产生形状
+                  drawFeature.setGeometry(new ol.geom.Polygon([]))
+                }
+                this.log('🛡️ 绘制防御：你正在行政区内落点，该节点已实时失效。', '#e67e22')
+              } else {
+                this.lastHealthyGeometry = currentGeom.clone()
+              }
+            })
+          })
+
+          this.draw.on('drawend', e => {
+            if (this.changeListenerKey) {
+              ol.Observable.unByKey(this.changeListenerKey)
+              this.changeListenerKey = null
+            }
+            this.runPostTopology(e.feature, true)
+          })
+        }
+
+        loadAdminBoundaries() {
+          const adminWkt = 'POLYGON((116.35 39.95, 116.45 39.95, 116.45 39.85, 116.35 39.85, 116.35 39.95))'
+          const feats = this.helper.deserialize(adminWkt)
+          this.adminSource.addFeatures(feats)
+          this.log('架构就绪：方案二实时回滚防御机制已上线（纯同步无 setTimeout，体验流畅度拉满）。')
+        }
+
+        /**
+         * 善后拓扑处理：此时图形已经 100% 确保不在行政区内部了。
+         * 只需做两件事：
+         * 1. 剪掉跨界压在行政区边界线上的部分（如果有的话）。
+         * 2. 反向裁剪业务层的邻居，如果被完全遮罩则自动将其移除销毁。
+         */
+        runPostTopology(feature, isNew) {
+          const parser = this.engine.parser
+          let geom = feature.getGeometry()
+
+          // 防御性的双保险：如果因为极端操作产生了空几何，则直接清理
+          if (!geom || geom.getCoordinates().length === 0 || geom.getCoordinates()[0].length === 0) {
+            this.bizSource.removeFeature(feature)
+            this.select.getFeatures().clear()
+            return
+          }
+
+          let jstsTarget = parser.read(geom).buffer(0)
+
+          // 1. 裁剪掉压在行政区内部的边缘部分（确保无缝切合）
+          const allAdmin = this.adminSource.getFeatures()
+          allAdmin.forEach(adminFeat => {
+            const jstsAdmin = parser.read(adminFeat.getGeometry()).buffer(0)
+            if (jstsTarget.intersects(jstsAdmin)) {
+              try {
+                jstsTarget = jstsTarget.difference(jstsAdmin)
+              } catch (e) {}
+            }
+          })
+
+          const cleanedTargetGeom = parser.write(jstsTarget)
+          feature.setGeometry(cleanedTargetGeom)
+
+          // 2. 反向清洗业务邻居（完全覆盖则移除对方）
+          const otherBizFeatures = this.bizSource.getFeatures().filter(f => f !== feature)
+          const jstsCurrent = parser.read(cleanedTargetGeom).buffer(0)
+          let removedCount = 0
+
+          otherBizFeatures.forEach(neighborFeat => {
+            const jstsNeighbor = parser.read(neighborFeat.getGeometry()).buffer(0)
+
+            if (jstsCurrent.intersects(jstsNeighbor)) {
+              try {
+                const jstsNewNeighbor = jstsNeighbor.difference(jstsCurrent)
+                if (jstsNewNeighbor.isEmpty()) {
+                  // 在安全的结束节点同步移除，绝无生命周期冲突
+                  this.bizSource.removeFeature(neighborFeat)
+                  removedCount++
+                } else {
+                  neighborFeat.setGeometry(parser.write(jstsNewNeighbor))
+                }
+              } catch (e) {
+                console.error('邻居裁切失败', e)
+              }
+            }
+          })
+
+          this.select.getFeatures().clear()
+
+          if (removedCount > 0) {
+            this.log(
+              `🧹 拓扑清理：本次操作导致底层的 ${removedCount} 个多边形被完全覆盖，已实时同步销毁！`,
+              '#e67e22',
+            )
+          } else {
+            this.log(`拓扑关系结算完毕。`)
+          }
+        }
+
+        async mockApiLoad() {
+          this.log('📡 正在调用接口加载业务数据...')
+          await new Promise(r => setTimeout(r, 500))
+
+          const bizWkt =
+            'MULTIPOLYGON(((116.46 39.93, 116.49 39.93, 116.49 39.90, 116.46 39.90, 116.46 39.93)),((116.47 39.88, 116.49 39.88, 116.49 39.86, 116.47 39.86, 116.47 39.88)))'
+          const feats = this.helper.deserialize(bizWkt)
+          this.bizSource.addFeatures(feats)
+
+          this.map.getView().fit(this.bizSource.getExtent(), { padding: [50, 50, 50, 50], duration: 500 })
+          this.log(
+            '✅ 业务数据加载成功。测试指引：选中蓝色块，把它往黄色行政区里拖动，边界会产生硬碰撞，死活进不去。',
+          )
+        }
+
+        exportResult() {
+          const bizFeats = this.bizSource.getFeatures()
+          if (bizFeats.length === 0) return alert('无可提交数据')
+          const finalWkt = this.helper.serialize(bizFeats)
+          console.log('Submit:', finalWkt)
+          this.log('💾 WKT 数据已打印至控制台。')
+          alert('提交成功！')
+        }
+
+        log(msg, color = '#00ff41') {
+          const el = document.getElementById('log')
+          el.innerHTML =
+            `<div style="color:${color}">> ${new Date().toLocaleTimeString()} ${msg}</div>` + el.innerHTML
+        }
+      }
+
+      const app = new App()
+    </script>
+  </body>
+</html>

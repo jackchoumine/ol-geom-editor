@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>企业级 GIS 拓扑编辑器 - 终极状态互斥版</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css" />
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        font-family: 'Segoe UI', system-ui;
+      }
+      #map {
+        flex: 1;
+        background: #ecf0f1;
+      }
+      .toolbar {
+        padding: 15px 25px;
+        background: white;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+      .console {
+        height: 140px;
+        background: #1a1a1a;
+        color: #00ff41;
+        padding: 12px;
+        font-family: 'Consolas', monospace;
+        overflow-y: auto;
+        font-size: 12.5px;
+        border-top: 3px solid #333;
+      }
+
+      /* 按钮通用样式 */
+      .btn {
+        padding: 9px 16px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.2s;
+        background: #fdfdfd;
+        color: #333;
+      }
+      .btn:hover {
+        background: #f0f0f0;
+      }
+
+      /* 模式工具组样式 */
+      .tools-group {
+        display: flex;
+        background: #eee;
+        padding: 4px;
+        border-radius: 8px;
+        gap: 4px;
+      }
+      .btn-mode {
+        border: none;
+        background: transparent;
+      }
+      .btn-mode.active {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      /* 业务按钮样式 */
+      .btn-load {
+        background: #8e44ad;
+        color: white;
+        border: none;
+      }
+      .btn-submit {
+        background: #27ae60;
+        color: white;
+        border: none;
+        margin-left: 10px;
+      }
+      .btn:hover {
+        filter: brightness(1.1);
+      }
+
+      .legend {
+        margin-left: auto;
+        display: flex;
+        gap: 20px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .color-box {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        border-radius: 3px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button class="btn btn-load" onclick="app.mockApiLoad()">📡 加载业务数据</button>
+
+      <!-- 🟢 核心改动：互斥模式切换工具组 -->
+      <div class="tools-group">
+        <button id="btn-mode-select" class="btn btn-mode active" onclick="app.switchMode('select')">
+          🔍 仅查看/选择
+        </button>
+        <button id="btn-mode-draw" class="btn btn-mode" onclick="app.switchMode('draw')">
+          ➕ 绘制业务区
+        </button>
+        <button id="btn-mode-modify" class="btn btn-mode" onclick="app.switchMode('modify')">
+          ✏️ 节点微调修改
+        </button>
+      </div>
+
+      <button class="btn btn-submit" onclick="app.exportResult()">💾 提交数据</button>
+
+      <div class="legend">
+        <span
+          ><b class="color-box" style="background: rgba(241, 196, 15, 0.4); border: 2px solid #f1c40f"></b
+          >黄色：行政区 (物理墙)</span
+        >
+        <span
+          ><b class="color-box" style="background: rgba(52, 152, 219, 0.4); border: 2px solid #3498db"></b
+          >蓝色：业务区</span
+        >
+      </div>
+    </div>
+
+    <div id="map"></div>
+    <div class="console" id="log"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsts@2.10.0/dist/jsts.min.js"></script>
+
+    <script>
+      class TopologyEngine {
+        constructor() {
+          this.parser = new jsts.io.OL3Parser()
+          this.parser.inject(
+            ol.geom.Point,
+            ol.geom.LineString,
+            ol.geom.LinearRing,
+            ol.geom.Polygon,
+            ol.geom.MultiPoint,
+            ol.geom.MultiLineString,
+            ol.geom.MultiPolygon,
+          )
+        }
+        isTotallyInside(targetGeom, obstacles) {
+          if (!targetGeom) return false
+
+          // 【核心防御】如果是 Polygon 且点数不足 4 个，直接判定为合法（跳过计算，防止引擎崩溃）
+          if (targetGeom instanceof ol.geom.Polygon) {
+            const coords = targetGeom.getCoordinates()
+            // coords[0] 是外环坐标数组，如果点数小于 4，说明还是半成品线段
+            if (!coords || !coords[0] || coords[0].length < 4) {
+              return false
+            }
+          }
+
+          try {
+            let jstsTarget = this.parser.read(targetGeom).buffer(0)
+            if (jstsTarget.isEmpty()) return false
+            for (let obs of obstacles) {
+              let jstsObs = this.parser.read(obs.getGeometry()).buffer(0)
+              if (jstsObs.contains(jstsTarget)) return true
+            }
+          } catch (e) {
+            console.error('空间计算异常', e)
+          }
+          return false
+        }
+      }
+
+      class DataHelper {
+        constructor() {
+          this.wkt = new ol.format.WKT()
+        }
+        deserialize(wkt) {
+          const feature = this.wkt.readFeature(wkt)
+          const geom = feature.getGeometry()
+          const geoms = geom instanceof ol.geom.MultiPolygon ? geom.getPolygons() : [geom]
+          return geoms.map(g => new ol.Feature(g))
+        }
+        /**
+         * 👑 终极洗涤防污染序列化引擎
+         */
+        serialize(features) {
+          const validCoords = []
+
+          features.forEach(f => {
+            const geom = f.getGeometry()
+            if (!geom) return
+
+            // 统一转化为多边形数组处理，彻底拍平层级差异
+            const polygons = geom instanceof ol.geom.MultiPolygon ? geom.getPolygons() : [geom]
+
+            polygons.forEach(poly => {
+              const coords = poly.getCoordinates() // 标准的 Polygon 三层数组 [[[x,y], [x,y], ...]]
+
+              // 核心硬核校验：
+              // 1. 数组必须存在
+              // 2. 必须拥有外环 (coords[0])
+              // 3. 外环坐标点必须 >= 4 个 (才可能构成合法的 LinearRing 面)
+              if (coords && coords[0] && Array.isArray(coords[0]) && coords[0].length >= 4) {
+                // 二级深度防御：确保这4个点里面，不是一堆 undefined 或空数组
+                const isValidRing = coords[0].every(
+                  pt => Array.isArray(pt) && pt.length >= 2 && typeof pt[0] === 'number',
+                )
+
+                if (isValidRing) {
+                  validCoords.push(coords) // 只把真正纯净、饱满、健康的面坐标推进去
+                }
+              }
+            })
+          })
+
+          // 如果全部要素都是空壳、残渣，直接返回 GIS 标准的空标志，杜绝语法错误
+          if (validCoords.length === 0) {
+            return 'MULTIPOLYGON EMPTY'
+          }
+
+          // 重新包装成纯净、绝对合法的 MultiPolygon 对象
+          const pureMultiPolygon = new ol.geom.MultiPolygon(validCoords)
+
+          // 通过 WKT 导出
+          return this.wkt.writeGeometry(pureMultiPolygon)
+        }
+      }
+
+      class App {
+        constructor() {
+          this.engine = new TopologyEngine()
+          this.helper = new DataHelper()
+
+          this.adminSource = new ol.source.Vector()
+          this.bizSource = new ol.source.Vector()
+
+          this.lastHealthyGeometry = null
+          this.changeListenerKey = null
+          this.currentMode = 'select' // 默认初始状态
+
+          this.initMap()
+          this.initInteractions()
+          this.loadAdminBoundaries()
+          this.switchMode('select') // 强制初始化一次互斥状态
+        }
+
+        initMap() {
+          this.map = new ol.Map({
+            target: 'map',
+            layers: [
+              new ol.layer.Tile({ source: new ol.source.OSM() }),
+              new ol.layer.Vector({
+                source: this.adminSource,
+                style: new ol.style.Style({
+                  fill: new ol.style.Fill({ color: 'rgba(241, 196, 15, 0.4)' }),
+                  stroke: new ol.style.Stroke({ color: '#f1c40f', width: 3 }),
+                }),
+              }),
+              new ol.layer.Vector({
+                source: this.bizSource,
+                style: new ol.style.Style({
+                  fill: new ol.style.Fill({ color: 'rgba(52, 152, 219, 0.4)' }),
+                  stroke: new ol.style.Stroke({ color: '#2980b9', width: 2 }),
+                }),
+              }),
+            ],
+            view: new ol.View({ center: [116.4, 39.9], projection: 'EPSG:4326', zoom: 12 }),
+          })
+        }
+
+        initInteractions() {
+          // 1. Select
+          this.select = new ol.interaction.Select({
+            condition: ol.events.condition.click,
+            layers: layer => layer.getSource() === this.bizSource,
+          })
+
+          // 2. Modify
+          this.modify = new ol.interaction.Modify({
+            source: this.bizSource,
+            features: this.select.getFeatures(),
+          })
+
+          // 3. Draw
+          this.draw = new ol.interaction.Draw({
+            source: this.bizSource,
+            type: 'Polygon',
+          })
+
+          // 先全部装配进地图，后续通过 active 属性动态控制开关
+          this.map.addInteraction(this.select)
+          this.map.addInteraction(this.modify)
+          this.map.addInteraction(this.draw)
+
+          // ==================== 绑定修改动态防御 ====================
+          this.modify.on('modifystart', e => {
+            const features = e.features.getArray()
+            if (features.length > 0) {
+              const targetFeature = features[0]
+              this.lastHealthyGeometry = targetFeature.getGeometry().clone()
+
+              this.changeListenerKey = targetFeature.getGeometry().on('change', evt => {
+                const currentGeom = evt.target
+                if (this.engine.isTotallyInside(currentGeom, this.adminSource.getFeatures())) {
+                  targetFeature.setGeometry(this.lastHealthyGeometry.clone())
+                } else {
+                  this.lastHealthyGeometry = currentGeom.clone()
+                }
+              })
+            }
+          })
+
+          this.modify.on('modifyend', e => {
+            if (this.changeListenerKey) {
+              ol.Observable.unByKey(this.changeListenerKey)
+              this.changeListenerKey = null
+            }
+            e.features.forEach(f => this.runPostTopology(f, false))
+          })
+
+          // ==================== 绑定绘制动态防御 ====================
+          this.draw.on('drawstart', e => {
+            const drawFeature = e.feature
+            this.lastHealthyGeometry = null
+
+            this.changeListenerKey = drawFeature.getGeometry().on('change', evt => {
+              const currentGeom = evt.target
+              const coords = currentGeom.getCoordinates()
+
+              // 【核心防御】刚落下一两个点时，不具备面特征，直接跳过碰撞逻辑，允许用户继续画
+              if (!coords || !coords[0] || coords[0].length < 4) {
+                return
+              }
+
+              const admins = this.adminSource.getFeatures()
+              if (this.engine.isTotallyInside(currentGeom, admins)) {
+                if (this.lastHealthyGeometry) {
+                  drawFeature.setGeometry(this.lastHealthyGeometry.clone())
+                } else {
+                  drawFeature.setGeometry(new ol.geom.Polygon([]))
+                }
+              } else {
+                this.lastHealthyGeometry = currentGeom.clone()
+              }
+            })
+          })
+
+          this.draw.on('drawend', e => {
+            if (this.changeListenerKey) {
+              ol.Observable.unByKey(this.changeListenerKey)
+              this.changeListenerKey = null
+            }
+            this.runPostTopology(e.feature, true)
+          })
+        }
+
+        /**
+         * 🟢 核心逻辑：状态机动态互斥控制
+         */
+        switchMode(mode) {
+          this.currentMode = mode
+
+          // 重置所有交互的高亮样式和活动状态
+          this.select.getFeatures().clear()
+
+          // 核心硬互斥开关控制
+          switch (mode) {
+            case 'select':
+              this.select.setActive(true)
+              this.modify.setActive(false)
+              this.draw.setActive(false)
+              this.log('🔄 切换到：[查看/选择] 模式。可以点击要素，但无法绘制或调整节点。')
+              break
+            case 'draw':
+              this.select.setActive(false)
+              this.modify.setActive(false)
+              this.draw.setActive(true)
+              this.log('🔄 切换到：[绘制业务区] 模式。请在非黄色区域落点绘制多边形。')
+              break
+            case 'modify':
+              this.select.setActive(true) // 修改模式需要先能“选得中”
+              this.modify.setActive(true) // 激活修改顶点工具
+              this.draw.setActive(false) // 强行关闭绘制，防止打断
+              this.log('🔄 切换到：[节点微调修改] 模式。点击蓝色区域激活控制顶点进行拖动。')
+              break
+          }
+
+          // 更新 UI 按钮激活高亮样式
+          document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'))
+          const activeBtn = document.getElementById(`btn-mode-${mode}`)
+          if (activeBtn) activeBtn.classList.add('active')
+        }
+
+        loadAdminBoundaries() {
+          const adminWkt = 'POLYGON((116.35 39.95, 116.45 39.95, 116.45 39.85, 116.35 39.85, 116.35 39.95))'
+          this.adminSource.addFeatures(this.helper.deserialize(adminWkt))
+          this.log('系统架构：多图层物理隔离 + 实时碰撞回滚 + 状态机互斥面板全部注入成功。')
+        }
+
+        runPostTopology(feature, isNew) {
+          const parser = this.engine.parser
+          let geom = feature.getGeometry()
+
+          if (!geom || geom.getCoordinates().length === 0 || geom.getCoordinates()[0].length === 0) {
+            this.bizSource.removeFeature(feature)
+            this.select.getFeatures().clear()
+            return
+          }
+
+          let jstsTarget = parser.read(geom).buffer(0)
+          const allAdmin = this.adminSource.getFeatures()
+          allAdmin.forEach(adminFeat => {
+            const jstsAdmin = parser.read(adminFeat.getGeometry()).buffer(0)
+            if (jstsTarget.intersects(jstsAdmin)) {
+              try {
+                jstsTarget = jstsTarget.difference(jstsAdmin)
+              } catch (e) {}
+            }
+          })
+
+          const cleanedTargetGeom = parser.write(jstsTarget)
+          feature.setGeometry(cleanedTargetGeom)
+
+          const otherBizFeatures = this.bizSource.getFeatures().filter(f => f !== feature)
+          const jstsCurrent = parser.read(cleanedTargetGeom).buffer(0)
+          let removedCount = 0
+
+          otherBizFeatures.forEach(neighborFeat => {
+            const jstsNeighbor = parser.read(neighborFeat.getGeometry()).buffer(0)
+            if (jstsCurrent.intersects(jstsNeighbor)) {
+              try {
+                const jstsNewNeighbor = jstsNeighbor.difference(jstsCurrent)
+                if (jstsNewNeighbor.isEmpty()) {
+                  this.bizSource.removeFeature(neighborFeat)
+                  removedCount++
+                } else {
+                  neighborFeat.setGeometry(parser.write(jstsNewNeighbor))
+                }
+              } catch (e) {
+                console.error(e)
+              }
+            }
+          })
+
+          this.select.getFeatures().clear()
+
+          if (removedCount > 0) {
+            this.log(`🧹 拓扑清理：有 ${removedCount} 个底层业务区被完全覆盖，已自动移除！`, '#e67e22')
+          } else {
+            this.log(`拓扑裁切结算完毕。`)
+          }
+        }
+
+        async mockApiLoad() {
+          this.log('📡 正在调用接口加载业务数据...')
+          await new Promise(r => setTimeout(r, 400))
+          const bizWkt =
+            'MULTIPOLYGON(((116.46 39.93, 116.49 39.93, 116.49 39.90, 116.46 39.90, 116.46 39.93)),((116.47 39.88, 116.49 39.88, 116.49 39.86, 116.47 39.86, 116.47 39.88)))'
+          this.bizSource.addFeatures(this.helper.deserialize(bizWkt))
+          this.map.getView().fit(this.bizSource.getExtent(), { padding: [50, 50, 50, 50], duration: 400 })
+          this.log('✅ 业务数据加载完毕。请使用上方互斥控制组测试不同的编辑体验。')
+        }
+
+        exportResult() {
+          const bizFeats = this.bizSource.getFeatures()
+          if (bizFeats.length === 0) return alert('无可提交数据')
+          console.log('Submit:')
+          console.log(this.helper.serialize(bizFeats))
+          this.log('💾 WKT 数据已打印至控制台。')
+          alert('提交成功！')
+        }
+
+        log(msg, color = '#00ff41') {
+          const el = document.getElementById('log')
+          el.innerHTML =
+            `<div style="color:${color}">> ${new Date().toLocaleTimeString()} ${msg}</div>` + el.innerHTML
+        }
+      }
+
+      const app = new App()
+    </script>
+  </body>
+</html>
