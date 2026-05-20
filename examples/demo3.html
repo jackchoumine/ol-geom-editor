@@ -407,7 +407,10 @@
         }
 
         /**
-         * 👑 核心修复：在这里执行强力的后置多边形求差裁剪，确保 100% 不重叠
+         * 👑 终极完美版：排他扩张拓扑逻辑（严禁内部嵌套绘制）
+         * 1. 如果新图形完全在老图形内部 -> 新图形直接移除，老图形完好无损（不挖洞）。
+         * 2. 如果新图形完全包裹了老图形 -> 老图形被吞噬移除，新图形保留。
+         * 3. 如果新图形与老图形部分重叠 -> 老图形割让重叠面积，新老图形无缝拼接。
          */
         runPostTopology(feature, isNew) {
           const parser = this.engine.parser
@@ -418,9 +421,10 @@
             return
           }
 
+          // 1. 提取新画图形的 JSTS 几何体
           let jstsTarget = parser.read(geom).buffer(0)
 
-          // ------------------ 🛡️ 第一重防御：扣除黄色障碍物 ------------------
+          // ------------------ 🛡️ 第一步：扣除黄色障碍物（物理墙） ------------------
           const allAdmin = this.adminSource.getFeatures()
           allAdmin.forEach(adminFeat => {
             const jstsAdmin = parser.read(adminFeat.getGeometry()).buffer(0)
@@ -431,34 +435,87 @@
             }
           })
 
-          // ------------------ 🛡️ 第二重防御：扣除已有蓝色业务区 ------------------
+          // 如果扣完障碍物新图形自己空了，直接销毁
+          if (jstsTarget.isEmpty()) {
+            this.safeRemoveFeature(feature, isNew)
+            this.log(`🧹 拓扑清理：新业务区完全落入障碍物，已被自动擦除。`, '#e67e22')
+            return
+          }
+
+          // ------------------ 🛑 第二步：核心边界拦截（严禁在已有图形内部绘制） ------------------
           const allBiz = this.bizSource.getFeatures()
+          let isIllegalInside = false // 是否触发“小面在大面内”的非法标记
+
+          for (let bizFeat of allBiz) {
+            if (bizFeat === feature) continue // 排除自身
+
+            let bizGeom = bizFeat.getGeometry()
+            if (!bizGeom) continue
+
+            const jstsBiz = parser.read(bizGeom).buffer(0)
+
+            // 👑 核心硬核拦截：如果老图形完全包含了新图形，直接宣判新图形死刑！
+            if (jstsBiz.contains(jstsTarget)) {
+              isIllegalInside = true
+              break // 逮到了直接跳出，后面什么裁剪都不用做了
+            }
+          }
+
+          // 判定 A：如果发现是“大面吞小面”的非法嵌套绘制，直接把新画的小面移除，保全大面
+          if (isIllegalInside) {
+            this.safeRemoveFeature(feature, isNew)
+            this.log(
+              `🚫 拓扑拒绝：不允许在已有业务区内部重复绘制！新图形已自动移除，保留原大图形。`,
+              '#e74c3c',
+            )
+            return
+          }
+
+          // ------------------ ✂️ 第三步：合法的跨界/吞噬裁剪 ------------------
+          let removedOldCount = 0
+          let updatedOldCount = 0
+
           allBiz.forEach(bizFeat => {
-            // 排除自身
-            if (bizFeat !== feature) {
-              const jstsBiz = parser.read(bizFeat.getGeometry()).buffer(0)
-              if (jstsTarget.intersects(jstsBiz)) {
-                try {
-                  // 👑 核心：直接把跟已有业务区相交的【重叠面积】彻底裁剪掉！
-                  jstsTarget = jstsTarget.difference(jstsBiz)
-                } catch (e) {
-                  console.error('重叠区域裁剪异常', e)
+            if (bizFeat === feature) return // 排除自身
+
+            let bizGeom = bizFeat.getGeometry()
+            if (!bizGeom) return
+
+            const jstsBiz = parser.read(bizGeom).buffer(0)
+
+            // 此时的相交，只可能是“部分重叠（跨界）”或者“新图形完全包裹老图形（吞噬）”
+            if (jstsTarget.intersects(jstsBiz)) {
+              try {
+                const jstsNewBiz = jstsBiz.difference(jstsTarget)
+
+                if (jstsNewBiz.isEmpty()) {
+                  // 情况 1：新图形完全包裹了老图形（大面吞小面），老图形人间蒸发
+                  this.bizSource.removeFeature(bizFeat)
+                  removedOldCount++
+                } else {
+                  // 情况 2：普通的跨界重叠，老图形割让被踩住的领地，更新老图形几何
+                  bizFeat.setGeometry(parser.write(jstsNewBiz))
+                  updatedOldCount++
                 }
+              } catch (e) {
+                console.error('地块割让计算异常', e)
               }
             }
           })
 
-          // 如果被裁得一丝不剩，执行彻底清除
-          if (jstsTarget.isEmpty()) {
-            this.safeRemoveFeature(feature, isNew)
-            this.log(`🧹 拓扑清理：业务区由于完全重叠或落入障碍物，已被自动擦除。`, '#e67e22')
-            return
-          }
-
-          // 写入裁剪后的纯净几何（此时它与邻居只会共享边或点）
+          // 4. 最终将完整、合法的新几何写入新要素中
           feature.setGeometry(parser.write(jstsTarget))
           this.select.getFeatures().clear()
-          this.log(`拓扑裁切结算完毕，已完美消除面积重叠。`)
+
+          // 5. 打印业务日志
+          if (removedOldCount > 0 || updatedOldCount > 0) {
+            this.log(
+              `融合结算：新业务区成功落地。吞噬并移除了 ${removedOldCount} 个被完全覆盖的旧地块，裁剪了 ${updatedOldCount} 个相邻跨界地块。`,
+              '#3498db',
+            )
+          } else {
+            this.log(`拓扑结算完毕，未发生重叠冲突。`)
+          }
         }
 
         safeRemoveFeature(feature, isNew) {
