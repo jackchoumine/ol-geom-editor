@@ -413,56 +413,27 @@
          * 3. 如果新图形与老图形部分重叠 -> 老图形割让重叠面积，新老图形无缝拼接。
          */
         runPostTopology(feature, isNew) {
-          const parser = this.engine.parser
           let geom = feature.getGeometry()
 
+          // 1. 基础空几何防御
           if (!geom || geom.getCoordinates().length === 0 || geom.getCoordinates()[0].length === 0) {
             this.safeRemoveFeature(feature, isNew)
             return
           }
 
-          // 1. 提取新画图形的 JSTS 几何体
-          let jstsTarget = parser.read(geom).buffer(0)
+          // 将 OpenLayers 几何体转换为 JSTS 几何体，并做 buffer(0) 修复微瑕疵
+          let jstsTarget = this.engine.parser.read(geom).buffer(0)
 
-          // ------------------ 🛡️ 第一步：扣除黄色障碍物（物理墙） ------------------
-          const allAdmin = this.adminSource.getFeatures()
-          allAdmin.forEach(adminFeat => {
-            const jstsAdmin = parser.read(adminFeat.getGeometry()).buffer(0)
-            if (jstsTarget.intersects(jstsAdmin)) {
-              try {
-                jstsTarget = jstsTarget.difference(jstsAdmin)
-              } catch (e) {}
-            }
-          })
-
-          // 如果扣完障碍物新图形自己空了，直接销毁
+          // 2. 擦除黄色障碍物
+          jstsTarget = this.eraseObstacles(jstsTarget)
           if (jstsTarget.isEmpty()) {
             this.safeRemoveFeature(feature, isNew)
             this.log(`🧹 拓扑清理：新业务区完全落入障碍物，已被自动擦除。`, '#e67e22')
             return
           }
 
-          // ------------------ 🛑 第二步：核心边界拦截（严禁在已有图形内部绘制） ------------------
-          const allBiz = this.bizSource.getFeatures()
-          let isIllegalInside = false // 是否触发“小面在大面内”的非法标记
-
-          for (let bizFeat of allBiz) {
-            if (bizFeat === feature) continue // 排除自身
-
-            let bizGeom = bizFeat.getGeometry()
-            if (!bizGeom) continue
-
-            const jstsBiz = parser.read(bizGeom).buffer(0)
-
-            // 👑 核心硬核拦截：如果老图形完全包含了新图形，直接宣判新图形死刑！
-            if (jstsBiz.contains(jstsTarget)) {
-              isIllegalInside = true
-              break // 逮到了直接跳出，后面什么裁剪都不用做了
-            }
-          }
-
-          // 判定 A：如果发现是“大面吞小面”的非法嵌套绘制，直接把新画的小面移除，保全大面
-          if (isIllegalInside) {
+          // 3. 拦截非法的内部嵌套绘制（大面吞小面）
+          if (this.checkInsideNest(jstsTarget, feature)) {
             this.safeRemoveFeature(feature, isNew)
             this.log(
               `🚫 拓扑拒绝：不允许在已有业务区内部重复绘制！新图形已自动移除，保留原大图形。`,
@@ -471,66 +442,119 @@
             return
           }
 
-          // ------------------ ✂️ 第三步：合法的跨界/吞噬裁剪 ------------------
+          // 4. 处理合法的跨界剪切与大面吞噬老面
+          this.clipNeighborBoundaries(jstsTarget, feature)
+
+          // 5. 写入最终合法的新几何并清理选择状态
+          feature.setGeometry(this.engine.parser.write(jstsTarget))
+          this.select.getFeatures().clear()
+          this.log(`拓扑结算完毕，已完美消除面积重叠。`)
+        }
+
+        /**
+         * 🧱 原子函数 1：扣除黄色障碍物（物理墙）
+         * @param {jsts.geom.Geometry} jstsTarget 新画的几何体
+         * @returns {jsts.geom.Geometry} 扣除障碍物后的几何体
+         */
+        eraseObstacles(jstsTarget) {
+          const allAdmin = this.adminSource.getFeatures()
+          allAdmin.forEach(adminFeat => {
+            if (!adminFeat.getGeometry()) return
+            const jstsAdmin = this.engine.parser.read(adminFeat.getGeometry()).buffer(0)
+            if (jstsTarget.intersects(jstsAdmin)) {
+              try {
+                jstsTarget = jstsTarget.difference(jstsAdmin)
+              } catch (e) {
+                console.error('障碍物裁剪异常', e)
+              }
+            }
+          })
+          return jstsTarget
+        }
+
+        /**
+         * 🛑 原子函数 2：校验是否属于非法的“内部嵌套/挖洞绘制”
+         * @param {jsts.geom.Geometry} jstsTarget 新画的几何体
+         * @param {ol.Feature} currentFeature 当前要素自身
+         * @returns {boolean} true 代表非法（在大面内部）
+         */
+        checkInsideNest(jstsTarget, currentFeature) {
+          const allBiz = this.bizSource.getFeatures()
+          for (let bizFeat of allBiz) {
+            if (bizFeat === currentFeature) continue // 排除自身
+            if (!bizFeat.getGeometry()) continue
+
+            const jstsBiz = this.engine.parser.read(bizFeat.getGeometry()).buffer(0)
+            // 如果老图形完全包含了新图形，宣判死刑
+            if (jstsBiz.contains(jstsTarget)) {
+              return true
+            }
+          }
+          return false
+        }
+
+        /**
+         * ✂️ 原子函数 3：裁剪相邻业务区领地（让步或完全吞噬）
+         * @param {jsts.geom.Geometry} jstsTarget 新画的几何体
+         * @param {ol.Feature} currentFeature 当前要素自身
+         */
+        clipNeighborBoundaries(jstsTarget, currentFeature) {
+          const allBiz = this.bizSource.getFeatures()
           let removedOldCount = 0
           let updatedOldCount = 0
 
           allBiz.forEach(bizFeat => {
-            if (bizFeat === feature) return // 排除自身
+            if (bizFeat === currentFeature) return // 排除自身
+            if (!bizFeat.getGeometry()) return
 
-            let bizGeom = bizFeat.getGeometry()
-            if (!bizGeom) return
+            const jstsBiz = this.engine.parser.read(bizFeat.getGeometry()).buffer(0)
 
-            const jstsBiz = parser.read(bizGeom).buffer(0)
-
-            // 此时的相交，只可能是“部分重叠（跨界）”或者“新图形完全包裹老图形（吞噬）”
+            // 如果有面积相交（此时只可能是：普通跨界 或 彻底包裹老图形）
             if (jstsTarget.intersects(jstsBiz)) {
               try {
                 const jstsNewBiz = jstsBiz.difference(jstsTarget)
 
                 if (jstsNewBiz.isEmpty()) {
-                  // 情况 1：新图形完全包裹了老图形（大面吞小面），老图形人间蒸发
+                  // 情况 A：老图形被完全覆盖，直接移除
                   this.bizSource.removeFeature(bizFeat)
                   removedOldCount++
                 } else {
-                  // 情况 2：普通的跨界重叠，老图形割让被踩住的领地，更新老图形几何
-                  bizFeat.setGeometry(parser.write(jstsNewBiz))
+                  // 情况 B：老图形部分被踩，更新老图形几何（强行割让重叠面）
+                  bizFeat.setGeometry(this.engine.parser.write(jstsNewBiz))
                   updatedOldCount++
                 }
               } catch (e) {
-                console.error('地块割让计算异常', e)
+                console.error('相邻地块割让计算异常', e)
               }
             }
           })
 
-          // 4. 最终将完整、合法的新几何写入新要素中
-          feature.setGeometry(parser.write(jstsTarget))
-          this.select.getFeatures().clear()
-
-          // 5. 打印业务日志
           if (removedOldCount > 0 || updatedOldCount > 0) {
             this.log(
-              `融合结算：新业务区成功落地。吞噬并移除了 ${removedOldCount} 个被完全覆盖的旧地块，裁剪了 ${updatedOldCount} 个相邻跨界地块。`,
+              `融合结算：吞噬并移除了 ${removedOldCount} 个旧地块，裁剪了 ${updatedOldCount} 个跨界相邻地块。`,
               '#3498db',
             )
-          } else {
-            this.log(`拓扑结算完毕，未发生重叠冲突。`)
           }
         }
 
+        /**
+         * 🧹 原子函数 4：安全销毁/移除要素（解决 OpenLayers 缓存导致的残渣 Bug）
+         */
         safeRemoveFeature(feature, isNew) {
           this.select.getFeatures().clear()
-          this.modify.getOverlay().getSource().clear()
-          if (isNew) {
-            setTimeout(() => {
-              if (this.bizSource.getFeatures().includes(feature)) {
-                this.bizSource.removeFeature(feature)
-              }
-            }, 0)
-          } else {
+          this.modify.getOverlay().getSource().clear() // 清理 Modify 的动态顶点图层
+
+          const executeRemove = () => {
             if (this.bizSource.getFeatures().includes(feature)) {
               this.bizSource.removeFeature(feature)
             }
+          }
+
+          if (isNew) {
+            // 新要素需要异步 setTimeout 绕过 OpenLayers 内部 drawend 机制
+            setTimeout(executeRemove, 0)
+          } else {
+            executeRemove()
           }
         }
 
